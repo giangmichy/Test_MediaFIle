@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+		<RootNamespace>HD.Station.MediaManagement.Mvc</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\HD.Station.MediaManagement.Abstractions\HD.Station.MediaManagement.Abstractions.csproj" />
+		<ProjectReference Include="..\HD.Station.MediaManagement.SqlServer\HD.Station.MediaManagement.SqlServer.csproj" />
+	</ItemGroup>
+
+</Project>
