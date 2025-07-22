@@ -183,7 +183,9 @@ namespace HD.Station.MediaManagement.Mvc.Services
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             return extension switch
             {
-                ".mp4" or ".avi" or ".mov" or ".wmv" or ".flv" or ".webm" or ".mkv" or ".m4v" or ".3gp" => true,
+                ".mp4" or ".avi" or ".mov" or ".wmv" or ".mkv" or
+                ".flv" or ".webm" or ".mpeg" or ".mpg" or
+                ".m4v" or ".3gp" or ".3g2" => true,
                 _ => false
             };
         }

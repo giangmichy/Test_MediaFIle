@@ -1,4 +1,4 @@
-﻿// Final Working Media Files JavaScript
+﻿// Complete Media Files JavaScript with Full CRUD Operations
 
 console.log('🚀 Media Files JS Loading...');
 
@@ -6,22 +6,121 @@ console.log('🚀 Media Files JS Loading...');
 document.addEventListener('DOMContentLoaded', function () {
     console.log('✅ DOM Ready - Initializing Media Files');
 
-    // Auto-hide alerts
+    // Auto-hide alerts after 5 seconds
     setTimeout(() => {
         document.querySelectorAll('.alert').forEach(alert => {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
+            try {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            } catch (e) {
+                // Ignore if bootstrap alert is not available
+            }
         });
     }, 5000);
 
+    // File upload auto-detection
+    const fileInput = document.getElementById('FileUpload');
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            console.log('📁 File selected:', file.name);
+            autoDetectFileType(file);
+        });
+    }
+
     console.log('📋 Media Files System Ready');
 });
+
+// Auto-detect file type and format
+function autoDetectFileType(file) {
+    const fileName = file.name.toLowerCase();
+    const mediaTypeSelect = document.getElementById('MediaType');
+    const formatSelect = document.getElementById('Format');
+
+    if (!mediaTypeSelect || !formatSelect) return;
+
+    console.log('🔍 Auto-detecting file type for:', fileName);
+
+    // Reset selections
+    mediaTypeSelect.value = '';
+    formatSelect.value = '';
+
+    // Image formats
+    if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        mediaTypeSelect.value = 'Image';
+        formatSelect.value = 'Jpg';
+    } else if (fileName.endsWith('.png')) {
+        mediaTypeSelect.value = 'Image';
+        formatSelect.value = 'Png';
+    } else if (fileName.endsWith('.gif')) {
+        mediaTypeSelect.value = 'Image';
+        formatSelect.value = 'Gif';
+    } else if (fileName.endsWith('.bmp')) {
+        mediaTypeSelect.value = 'Image';
+        formatSelect.value = 'Bmp';
+    } else if (fileName.endsWith('.svg')) {
+        mediaTypeSelect.value = 'Image';
+        formatSelect.value = 'Svg';
+    }
+    // Video formats
+    else if (fileName.endsWith('.mp4')) {
+        mediaTypeSelect.value = 'Video';
+        formatSelect.value = 'Mp4';
+    } else if (fileName.endsWith('.avi')) {
+        mediaTypeSelect.value = 'Video';
+        formatSelect.value = 'Avi';
+    } else if (fileName.endsWith('.mov')) {
+        mediaTypeSelect.value = 'Video';
+        formatSelect.value = 'Mov';
+    } else if (fileName.endsWith('.wmv')) {
+        mediaTypeSelect.value = 'Video';
+        formatSelect.value = 'Wmv';
+    }
+    // Audio formats
+    else if (fileName.endsWith('.mp3')) {
+        mediaTypeSelect.value = 'Audio';
+        formatSelect.value = 'Mp3';
+    } else if (fileName.endsWith('.wav')) {
+        mediaTypeSelect.value = 'Audio';
+        formatSelect.value = 'Wav';
+    } else if (fileName.endsWith('.ogg')) {
+        mediaTypeSelect.value = 'Audio';
+        formatSelect.value = 'Ogg';
+    } else if (fileName.endsWith('.flac')) {
+        mediaTypeSelect.value = 'Audio';
+        formatSelect.value = 'Flac';
+    }
+    // Document formats
+    else if (fileName.endsWith('.pdf')) {
+        mediaTypeSelect.value = 'Document';
+        formatSelect.value = 'Pdf';
+    } else if (fileName.endsWith('.doc')) {
+        mediaTypeSelect.value = 'Document';
+        formatSelect.value = 'Doc';
+    } else if (fileName.endsWith('.docx')) {
+        mediaTypeSelect.value = 'Document';
+        formatSelect.value = 'Docx';
+    } else if (fileName.endsWith('.txt')) {
+        mediaTypeSelect.value = 'Document';
+        formatSelect.value = 'Txt';
+    }
+    // Default to Other
+    else {
+        mediaTypeSelect.value = 'Other';
+        formatSelect.value = 'Other';
+    }
+
+    console.log('✅ Auto-detection complete:', mediaTypeSelect.value, formatSelect.value);
+}
 
 // Utility Functions
 function showLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
         overlay.classList.remove('d-none');
+        console.log('⏳ Loading overlay shown');
     }
 }
 
@@ -29,6 +128,7 @@ function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
         overlay.classList.add('d-none');
+        console.log('✅ Loading overlay hidden');
     }
 }
 
@@ -141,6 +241,7 @@ function showDetailsModal(data) {
                     <tr><th>Loại:</th><td><span class="badge bg-primary">${data.mediaType}</span></td></tr>
                     <tr><th>Định dạng:</th><td><span class="badge bg-info">${data.format}</span></td></tr>
                     <tr><th>Kích thước:</th><td>${formatFileSize(data.size)}</td></tr>
+                    <tr><th>Hash:</th><td><code class="small">${data.hash}</code></td></tr>
                 </table>
             </div>
             <div class="col-md-6">
@@ -202,14 +303,18 @@ function showEditModal(data) {
             </div>
             
             <div class="mb-3">
-                <label class="form-label fw-bold">Mô tả</label>
-                <textarea class="form-control" name="Description" rows="3">${data.description || ''}</textarea>
+                <label class="form-label fw-bold">
+                    <i class="fas fa-comment-alt me-1"></i>Mô tả
+                </label>
+                <textarea class="form-control" name="Description" rows="3" placeholder="Nhập mô tả cho file...">${data.description || ''}</textarea>
             </div>
             
             <div class="row">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Loại Media</label>
-                    <select class="form-select" name="MediaType">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-tags me-1"></i>Loại Media
+                    </label>
+                    <select class="form-select" name="MediaType" required>
                         <option value="Image" ${data.mediaType === 'Image' ? 'selected' : ''}>Image</option>
                         <option value="Video" ${data.mediaType === 'Video' ? 'selected' : ''}>Video</option>
                         <option value="Audio" ${data.mediaType === 'Audio' ? 'selected' : ''}>Audio</option>
@@ -218,8 +323,10 @@ function showEditModal(data) {
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Trạng thái</label>
-                    <select class="form-select" name="Status">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-check-circle me-1"></i>Trạng thái
+                    </label>
+                    <select class="form-select" name="Status" required>
                         <option value="Active" ${data.status === 'Active' ? 'selected' : ''}>Active</option>
                         <option value="Deleted" ${data.status === 'Deleted' ? 'selected' : ''}>Deleted</option>
                         <option value="Processing" ${data.status === 'Processing' ? 'selected' : ''}>Processing</option>
@@ -238,6 +345,12 @@ function showEditModal(data) {
 function submitEdit() {
     console.log('💾 Submitting edit...');
     const form = document.getElementById('editForm');
+
+    if (!form) {
+        alert('Không tìm thấy form chỉnh sửa');
+        return;
+    }
+
     const formData = new FormData(form);
 
     showLoading();
@@ -246,20 +359,21 @@ function submitEdit() {
         method: 'POST',
         body: formData
     })
-        .then(response => {
+        .then(response => response.json())
+        .then(data => {
             hideLoading();
-            if (response.ok) {
+            if (data.success) {
                 hideCurrentModal();
                 alert('Cập nhật thành công!');
                 location.reload();
             } else {
-                alert('Lỗi cập nhật file');
+                alert('Lỗi: ' + (data.message || 'Cập nhật thất bại'));
             }
         })
         .catch(error => {
             hideLoading();
             console.error('Error:', error);
-            alert('Lỗi cập nhật file');
+            alert('Lỗi cập nhật file: ' + error.message);
         });
 }
 
@@ -296,6 +410,12 @@ function confirmDelete(fileId, fileName) {
 function submitDelete(fileId) {
     console.log('🗑️ Submitting delete for:', fileId);
     const form = document.getElementById('deleteForm');
+
+    if (!form) {
+        alert('Không tìm thấy form xóa');
+        return;
+    }
+
     const formData = new FormData(form);
 
     showLoading();
@@ -304,20 +424,21 @@ function submitDelete(fileId) {
         method: 'POST',
         body: formData
     })
-        .then(response => {
+        .then(response => response.json())
+        .then(data => {
             hideLoading();
-            if (response.ok) {
+            if (data.success) {
                 hideCurrentModal();
                 alert('Xóa file thành công!');
                 location.reload();
             } else {
-                alert('Lỗi xóa file');
+                alert('Lỗi: ' + (data.message || 'Xóa file thất bại'));
             }
         })
         .catch(error => {
             hideLoading();
             console.error('Error:', error);
-            alert('Lỗi xóa file');
+            alert('Lỗi xóa file: ' + error.message);
         });
 }
 
@@ -356,15 +477,31 @@ function showModal(title, content, buttons) {
     const modal = new bootstrap.Modal(document.getElementById('dynamicModal'));
     modal.show();
 
-    // Cleanup
+    // Cleanup when modal is hidden
     document.getElementById('dynamicModal').addEventListener('hidden.bs.modal', function () {
         this.remove();
     });
 }
 
 function hideCurrentModal() {
-    const modal = bootstrap.Modal.getInstance(document.getElementById('dynamicModal'));
-    if (modal) modal.hide();
+    const modalElement = document.getElementById('dynamicModal');
+    if (modalElement) {
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
+    }
 }
+
+// Upload form submission with loading
+document.addEventListener('DOMContentLoaded', function () {
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function () {
+            showLoading();
+            // Loading will be hidden when page reloads
+        });
+    }
+});
 
 console.log('✅ Media Files JavaScript Ready!');

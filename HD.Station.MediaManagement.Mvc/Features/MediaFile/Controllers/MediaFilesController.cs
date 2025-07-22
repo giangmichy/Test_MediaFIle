@@ -250,16 +250,14 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                 {
                     var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                     _logger.LogWarning($"Model validation failed: {string.Join(", ", errors)}");
-                    TempData["ErrorMessage"] = "Dữ liệu không hợp lệ";
-                    return RedirectToAction("Index");
+                    return Json(new { success = false, message = "Dữ liệu không hợp lệ" });
                 }
 
                 var existing = await _manager.GetAsync(vm.Id);
                 if (existing == null)
                 {
                     _logger.LogWarning($"File not found for update: {vm.Id}");
-                    TempData["ErrorMessage"] = "Không tìm thấy file";
-                    return RedirectToAction("Index");
+                    return Json(new { success = false, message = "Không tìm thấy file" });
                 }
 
                 // Chỉ update metadata, giữ nguyên file + hash + infoJson
@@ -280,14 +278,12 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
 
                 await _manager.UpdateAsync(dto);
                 _logger.LogInformation($"File updated successfully: {dto.FileName}");
-                TempData["SuccessMessage"] = "Cập nhật file thành công!";
-                return RedirectToAction("Index");
+                return Json(new { success = true, message = "Cập nhật file thành công!" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error updating file {vm.Id}");
-                TempData["ErrorMessage"] = $"Lỗi cập nhật file: {ex.Message}";
-                return RedirectToAction("Index");
+                return Json(new { success = false, message = $"Lỗi cập nhật file: {ex.Message}" });
             }
         }
 
@@ -318,14 +314,12 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
 
                 await _manager.DeleteAsync(id);
                 _logger.LogInformation($"File deleted from database: {id}");
-                TempData["SuccessMessage"] = "Xóa file thành công!";
-                return RedirectToAction("Index");
+                return Json(new { success = true, message = "Xóa file thành công!" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error deleting file {id}");
-                TempData["ErrorMessage"] = $"Lỗi xóa file: {ex.Message}";
-                return RedirectToAction("Index");
+                return Json(new { success = false, message = $"Lỗi xóa file: {ex.Message}" });
             }
         }
 
@@ -366,23 +360,46 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
         {
             return format switch
             {
-                FormatEnum.Mp4 => "video/mp4",
-                FormatEnum.Avi => "video/avi",
-                FormatEnum.Mov => "video/quicktime",
-                FormatEnum.Wmv => "video/x-ms-wmv",
-                FormatEnum.Mp3 => "audio/mpeg",
-                FormatEnum.Wav => "audio/wav",
-                FormatEnum.Ogg => "audio/ogg",
-                FormatEnum.Flac => "audio/flac",
+                // Image formats
                 FormatEnum.Jpg => "image/jpeg",
+                FormatEnum.Jpeg => "image/jpeg",
                 FormatEnum.Png => "image/png",
                 FormatEnum.Gif => "image/gif",
                 FormatEnum.Bmp => "image/bmp",
                 FormatEnum.Svg => "image/svg+xml",
+                FormatEnum.Webp => "image/webp",
+                FormatEnum.Tiff => "image/tiff",
+
+                // Video formats
+                FormatEnum.Mp4 => "video/mp4",
+                FormatEnum.Avi => "video/avi",
+                FormatEnum.Mov => "video/quicktime",
+                FormatEnum.Wmv => "video/x-ms-wmv",
+                FormatEnum.Mkv => "video/x-matroska",
+                FormatEnum.Flv => "video/x-flv",
+                FormatEnum.Webm => "video/webm",
+                FormatEnum.Mpeg => "video/mpeg",
+
+                // Audio formats
+                FormatEnum.Mp3 => "audio/mpeg",
+                FormatEnum.Wav => "audio/wav",
+                FormatEnum.Ogg => "audio/ogg",
+                FormatEnum.Flac => "audio/flac",
+                FormatEnum.Aac => "audio/aac",
+                FormatEnum.M4a => "audio/mp4",
+                FormatEnum.Wma => "audio/x-ms-wma",
+
+                // Document formats
                 FormatEnum.Pdf => "application/pdf",
                 FormatEnum.Doc => "application/msword",
                 FormatEnum.Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                FormatEnum.Xls => "application/vnd.ms-excel",
+                FormatEnum.Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                FormatEnum.Ppt => "application/vnd.ms-powerpoint",
+                FormatEnum.Pptx => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 FormatEnum.Txt => "text/plain",
+
+                // Default
                 _ => "application/octet-stream"
             };
         }

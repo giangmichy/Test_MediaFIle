@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,8 +23,12 @@ namespace HD.Station.MediaManagement.SqlServer.Stores
         public async Task<IEnumerable<MediaFileDto>> ListAsync(string filter, int page, int size)
         {
             var query = _db.MediaFiles.AsQueryable();
+
+            // Chỉ hiển thị các file Active (không bao gồm Deleted)
+            query = query.Where(e => e.Status != StatusEnum.Deleted);
+
             if (!string.IsNullOrWhiteSpace(filter))
-                query = query.Where(e => e.FileName.Contains(filter));
+                query = query.Where(e => e.FileName.Contains(filter) || e.Description.Contains(filter));
 
             var list = await query
                 .OrderByDescending(e => e.UploadTime)
@@ -54,12 +57,14 @@ namespace HD.Station.MediaManagement.SqlServer.Stores
         public async Task UpdateAsync(MediaFileDto dto)
         {
             var e = await _db.MediaFiles.FindAsync(dto.Id);
-            if (e == null) throw new KeyNotFoundException($"MediaFile {dto.Id} not found.");
+            if (e == null)
+                throw new KeyNotFoundException($"MediaFile {dto.Id} not found.");
 
             // Cập nhật các trường cho phép sửa
             e.Description = dto.Description;
+            e.MediaType = dto.MediaType;
             e.Status = dto.Status;
-            // (Nếu cần update thêm, gán vào đây)
+            // Giữ nguyên các trường khác: FileName, Format, Size, UploadTime, StoragePath, Hash, MediaInfoJson
 
             _db.MediaFiles.Update(e);
             await _db.SaveChangesAsync();
@@ -68,8 +73,10 @@ namespace HD.Station.MediaManagement.SqlServer.Stores
         public async Task DeleteAsync(Guid id)
         {
             var e = await _db.MediaFiles.FindAsync(id);
-            if (e == null) throw new KeyNotFoundException($"MediaFile {id} not found.");
+            if (e == null)
+                throw new KeyNotFoundException($"MediaFile {id} not found.");
 
+            // Hard delete - xóa hẳn khỏi database
             _db.MediaFiles.Remove(e);
             await _db.SaveChangesAsync();
         }
