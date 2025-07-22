@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddMediaManagementFeature()
     .AddMediaManagementSqlServer(builder.Configuration)
-    .AddMediaManagementMvc();    // đã bao gồm AddControllersWithViews & Razor runtime
+    .AddMediaManagementMvc();    
 
 // 2. Cấu hình serve MediaShare folder
 var mediaPath = builder.Configuration["MediaSharePath"];

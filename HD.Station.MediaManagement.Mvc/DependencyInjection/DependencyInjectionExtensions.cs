@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿
+using HD.Station.MediaManagement.Mvc.Controllers;
+using HD.Station.MediaManagement.Mvc.Services;
 using Microsoft.AspNetCore.Mvc.Razor;
-using HD.Station.MediaManagement.Mvc.Features.MediaFile.Controllers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HD.Station.MediaManagement.Mvc.DependencyInjection
 {
@@ -18,10 +20,11 @@ namespace HD.Station.MediaManagement.Mvc.DependencyInjection
                 // Tùy chỉnh nơi tìm view theo Feature-Folder
                 .Configure<RazorViewEngineOptions>(opts =>
                 {
-                    // Format: /Features/MediaFile/Views/{ControllerName}/{ViewName}.cshtml
-                    opts.ViewLocationFormats.Insert(0,
-                        "/Features/MediaFile/Views/{1}/{0}.cshtml");
+                    opts.ViewLocationFormats.Clear();
+                    opts.ViewLocationFormats.Add("/Features/MediaFile/Views/{0}.cshtml");
                 });
+
+            services.AddSingleton<IFileProcessor, FileProcessor>();
 
             return services;
         }
