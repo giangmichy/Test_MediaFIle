@@ -1,8 +1,8 @@
 ﻿public enum FormatEnum
 {
     // Image formats
-    Jpg,    
-    Jpeg,  
+    Jpg,
+    Jpeg,
     Png,
     Gif,
     Bmp,

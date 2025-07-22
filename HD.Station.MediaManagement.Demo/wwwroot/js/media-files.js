@@ -1,4 +1,4 @@
-﻿// Complete Media Files JavaScript with Full CRUD Operations
+﻿// Complete Media Files JavaScript with Format Filtering and Enhanced Auto-Detection
 
 console.log('🚀 Media Files JS Loading...');
 
@@ -30,10 +30,51 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Media type change event for format filtering
+    const mediaTypeSelect = document.getElementById('MediaType');
+    if (mediaTypeSelect) {
+        mediaTypeSelect.addEventListener('change', filterFormats);
+    }
+
     console.log('📋 Media Files System Ready');
 });
 
-// Auto-detect file type and format
+// Format filtering function
+function filterFormats() {
+    const mediaTypeSelect = document.getElementById('MediaType');
+    const formatSelect = document.getElementById('Format');
+
+    if (!mediaTypeSelect || !formatSelect) return;
+
+    const selectedMediaType = mediaTypeSelect.value;
+    console.log('🔄 Filtering formats for media type:', selectedMediaType);
+
+    // Get all format options
+    const allOptions = formatSelect.querySelectorAll('option');
+
+    // Reset format selection
+    formatSelect.value = '';
+
+    // Show/hide options based on media type
+    allOptions.forEach(option => {
+        if (option.value === '') {
+            // Keep the default "-- Chọn định dạng --" option
+            option.style.display = 'block';
+            return;
+        }
+
+        const category = option.getAttribute('data-category');
+        if (!selectedMediaType || category === selectedMediaType) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+
+    console.log('✅ Format filtering complete');
+}
+
+// Auto-detect file type and format - Updated với format mới
 function autoDetectFileType(file) {
     const fileName = file.name.toLowerCase();
     const mediaTypeSelect = document.getElementById('MediaType');
@@ -48,67 +89,145 @@ function autoDetectFileType(file) {
     formatSelect.value = '';
 
     // Image formats
-    if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+    if (fileName.endsWith('.jpg')) {
         mediaTypeSelect.value = 'Image';
+        filterFormats(); // Apply filtering first
         formatSelect.value = 'Jpg';
+    } else if (fileName.endsWith('.jpeg')) {
+        mediaTypeSelect.value = 'Image';
+        filterFormats();
+        formatSelect.value = 'Jpeg';
     } else if (fileName.endsWith('.png')) {
         mediaTypeSelect.value = 'Image';
+        filterFormats();
         formatSelect.value = 'Png';
     } else if (fileName.endsWith('.gif')) {
         mediaTypeSelect.value = 'Image';
+        filterFormats();
         formatSelect.value = 'Gif';
     } else if (fileName.endsWith('.bmp')) {
         mediaTypeSelect.value = 'Image';
+        filterFormats();
         formatSelect.value = 'Bmp';
     } else if (fileName.endsWith('.svg')) {
         mediaTypeSelect.value = 'Image';
+        filterFormats();
         formatSelect.value = 'Svg';
+    } else if (fileName.endsWith('.webp')) {
+        mediaTypeSelect.value = 'Image';
+        filterFormats();
+        formatSelect.value = 'Webp';
+    } else if (fileName.endsWith('.tiff') || fileName.endsWith('.tif')) {
+        mediaTypeSelect.value = 'Image';
+        filterFormats();
+        formatSelect.value = 'Tiff';
     }
+
     // Video formats
     else if (fileName.endsWith('.mp4')) {
         mediaTypeSelect.value = 'Video';
+        filterFormats();
         formatSelect.value = 'Mp4';
     } else if (fileName.endsWith('.avi')) {
         mediaTypeSelect.value = 'Video';
+        filterFormats();
         formatSelect.value = 'Avi';
     } else if (fileName.endsWith('.mov')) {
         mediaTypeSelect.value = 'Video';
+        filterFormats();
         formatSelect.value = 'Mov';
     } else if (fileName.endsWith('.wmv')) {
         mediaTypeSelect.value = 'Video';
+        filterFormats();
         formatSelect.value = 'Wmv';
+    } else if (fileName.endsWith('.mkv')) {
+        mediaTypeSelect.value = 'Video';
+        filterFormats();
+        formatSelect.value = 'Mkv';
+    } else if (fileName.endsWith('.flv')) {
+        mediaTypeSelect.value = 'Video';
+        filterFormats();
+        formatSelect.value = 'Flv';
+    } else if (fileName.endsWith('.webm')) {
+        mediaTypeSelect.value = 'Video';
+        filterFormats();
+        formatSelect.value = 'Webm';
+    } else if (fileName.endsWith('.mpeg') || fileName.endsWith('.mpg')) {
+        mediaTypeSelect.value = 'Video';
+        filterFormats();
+        formatSelect.value = 'Mpeg';
     }
+
     // Audio formats
     else if (fileName.endsWith('.mp3')) {
         mediaTypeSelect.value = 'Audio';
+        filterFormats();
         formatSelect.value = 'Mp3';
     } else if (fileName.endsWith('.wav')) {
         mediaTypeSelect.value = 'Audio';
+        filterFormats();
         formatSelect.value = 'Wav';
     } else if (fileName.endsWith('.ogg')) {
         mediaTypeSelect.value = 'Audio';
+        filterFormats();
         formatSelect.value = 'Ogg';
     } else if (fileName.endsWith('.flac')) {
         mediaTypeSelect.value = 'Audio';
+        filterFormats();
         formatSelect.value = 'Flac';
+    } else if (fileName.endsWith('.aac')) {
+        mediaTypeSelect.value = 'Audio';
+        filterFormats();
+        formatSelect.value = 'Aac';
+    } else if (fileName.endsWith('.m4a')) {
+        mediaTypeSelect.value = 'Audio';
+        filterFormats();
+        formatSelect.value = 'M4a';
+    } else if (fileName.endsWith('.wma')) {
+        mediaTypeSelect.value = 'Audio';
+        filterFormats();
+        formatSelect.value = 'Wma';
     }
+
     // Document formats
     else if (fileName.endsWith('.pdf')) {
         mediaTypeSelect.value = 'Document';
+        filterFormats();
         formatSelect.value = 'Pdf';
     } else if (fileName.endsWith('.doc')) {
         mediaTypeSelect.value = 'Document';
+        filterFormats();
         formatSelect.value = 'Doc';
     } else if (fileName.endsWith('.docx')) {
         mediaTypeSelect.value = 'Document';
+        filterFormats();
         formatSelect.value = 'Docx';
+    } else if (fileName.endsWith('.xls')) {
+        mediaTypeSelect.value = 'Document';
+        filterFormats();
+        formatSelect.value = 'Xls';
+    } else if (fileName.endsWith('.xlsx')) {
+        mediaTypeSelect.value = 'Document';
+        filterFormats();
+        formatSelect.value = 'Xlsx';
+    } else if (fileName.endsWith('.ppt')) {
+        mediaTypeSelect.value = 'Document';
+        filterFormats();
+        formatSelect.value = 'Ppt';
+    } else if (fileName.endsWith('.pptx')) {
+        mediaTypeSelect.value = 'Document';
+        filterFormats();
+        formatSelect.value = 'Pptx';
     } else if (fileName.endsWith('.txt')) {
         mediaTypeSelect.value = 'Document';
+        filterFormats();
         formatSelect.value = 'Txt';
     }
+
     // Default to Other
     else {
         mediaTypeSelect.value = 'Other';
+        filterFormats();
         formatSelect.value = 'Other';
     }
 

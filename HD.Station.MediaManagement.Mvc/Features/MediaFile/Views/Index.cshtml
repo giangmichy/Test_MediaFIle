@@ -207,32 +207,8 @@
             animation: spin 1s linear infinite;
         }
 
-   
-
-        {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-
-        }
-
-
-        {
-            height: 150px;
-        }
-
-        .card-content {
-            padding: 1rem;
-        }
-
-        .file-name {
-            font-size: 0.9rem;
-        }
-
-        }
+       
+    }
     </style>
 </head>
 <body>
@@ -446,7 +422,15 @@
                                 <i class="fas fa-file me-1"></i>Chọn File *
                             </label>
                             <input type="file" class="form-control" id="FileUpload" name="FileUpload" required>
-                            <div class="form-text">Hỗ trợ: Images (JPG, PNG, GIF), Videos (MP4, AVI), Audio (MP3, WAV), Documents (PDF, DOC)</div>
+                            <div class="form-text">
+                                <strong>Hỗ trợ các định dạng:</strong><br>
+                                <small>
+                                    • <strong>Images:</strong> JPG, JPEG, PNG, GIF, BMP, SVG, WEBP, TIFF<br>
+                                    • <strong>Videos:</strong> MP4, AVI, MOV, WMV, MKV, FLV, WEBM, MPEG<br>
+                                    • <strong>Audio:</strong> MP3, WAV, OGG, FLAC, AAC, M4A, WMA<br>
+                                    • <strong>Documents:</strong> PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT
+                                </small>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -463,7 +447,7 @@
                                     <label for="MediaType" class="form-label fw-bold">
                                         <i class="fas fa-tags me-1"></i>Loại Media *
                                     </label>
-                                    <select class="form-select" id="MediaType" name="MediaType" required>
+                                    <select class="form-select" id="MediaType" name="MediaType" required onchange="filterFormats()">
                                         <option value="">-- Chọn loại media --</option>
                                         @foreach (var mediaType in Enum.GetValues<MediaTypeEnum>())
                                         {
@@ -481,7 +465,15 @@
                                         <option value="">-- Chọn định dạng --</option>
                                         @foreach (var format in Enum.GetValues<FormatEnum>())
                                         {
-                                            <option value="@format">@format</option>
+                                            <option value="@format" data-category="@(
+                                                format.ToString().ToLower() switch {
+                                                    "jpg" or "jpeg" or "png" or "gif" or "bmp" or "svg" or "webp" or "tiff" => "Image",
+                                                    "mp4" or "avi" or "mov" or "wmv" or "mkv" or "flv" or "webm" or "mpeg" => "Video", 
+                                                    "mp3" or "wav" or "ogg" or "flac" or "aac" or "m4a" or "wma" => "Audio",
+                                                    "pdf" or "doc" or "docx" or "xls" or "xlsx" or "ppt" or "pptx" or "txt" => "Document",
+                                                    _ => "Other"
+                                                }
+                                            )">@format</option>
                                         }
                                     </select>
                                 </div>
@@ -512,7 +504,7 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    
     <!-- Include the media files JavaScript -->
     <script src="~/js/media-files.js" asp-append-version="true"></script>
 </body>

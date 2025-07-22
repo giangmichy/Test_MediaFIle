@@ -178,6 +178,7 @@ namespace HD.Station.MediaManagement.Mvc.Services
             return outputPath;
         }
 
+        // Updated với format mới
         public bool IsVideoFile(string filePath)
         {
             var extension = Path.GetExtension(filePath).ToLowerInvariant();

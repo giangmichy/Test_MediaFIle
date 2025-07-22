@@ -194,11 +194,56 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     }
                 }
 
-                // 5. Parse extension thành FormatEnum
-                if (!Enum.TryParse<FormatEnum>(ext, ignoreCase: true, out var fmt))
+                // 5. Parse extension thành FormatEnum với logic mở rộng
+                FormatEnum fmt = ext switch
                 {
-                    // Nếu convert thành mp4, set format là MP4
-                    fmt = (vm.MediaType == MediaTypeEnum.Video && ext != "mp4") ? FormatEnum.Mp4 : FormatEnum.Other;
+                    // Image formats
+                    "jpg" => FormatEnum.Jpg,
+                    "jpeg" => FormatEnum.Jpeg,
+                    "png" => FormatEnum.Png,
+                    "gif" => FormatEnum.Gif,
+                    "bmp" => FormatEnum.Bmp,
+                    "svg" => FormatEnum.Svg,
+                    "webp" => FormatEnum.Webp,
+                    "tiff" or "tif" => FormatEnum.Tiff,
+
+                    // Video formats
+                    "mp4" => FormatEnum.Mp4,
+                    "avi" => FormatEnum.Avi,
+                    "mov" => FormatEnum.Mov,
+                    "wmv" => FormatEnum.Wmv,
+                    "mkv" => FormatEnum.Mkv,
+                    "flv" => FormatEnum.Flv,
+                    "webm" => FormatEnum.Webm,
+                    "mpeg" or "mpg" => FormatEnum.Mpeg,
+
+                    // Audio formats
+                    "mp3" => FormatEnum.Mp3,
+                    "wav" => FormatEnum.Wav,
+                    "ogg" => FormatEnum.Ogg,
+                    "flac" => FormatEnum.Flac,
+                    "aac" => FormatEnum.Aac,
+                    "m4a" => FormatEnum.M4a,
+                    "wma" => FormatEnum.Wma,
+
+                    // Document formats
+                    "pdf" => FormatEnum.Pdf,
+                    "doc" => FormatEnum.Doc,
+                    "docx" => FormatEnum.Docx,
+                    "xls" => FormatEnum.Xls,
+                    "xlsx" => FormatEnum.Xlsx,
+                    "ppt" => FormatEnum.Ppt,
+                    "pptx" => FormatEnum.Pptx,
+                    "txt" => FormatEnum.Txt,
+
+                    // Default
+                    _ => FormatEnum.Other
+                };
+
+                // Nếu convert video thành mp4, override format
+                if (vm.MediaType == MediaTypeEnum.Video && ext != "mp4" && finalRelPath.Contains("converted/"))
+                {
+                    fmt = FormatEnum.Mp4;
                 }
 
                 // 6. Verify file exists after processing
@@ -355,7 +400,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             }
         }
 
-        // Helper method để get content type
+        // Helper method để get content type - Updated với format mới
         private string GetContentType(FormatEnum format)
         {
             return format switch
