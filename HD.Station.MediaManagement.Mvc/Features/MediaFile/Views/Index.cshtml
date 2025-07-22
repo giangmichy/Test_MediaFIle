@@ -1,8 +1,4 @@
-﻿<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
-<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-@using HD.Station.MediaManagement.Abstractions.Data
+﻿@using HD.Station.MediaManagement.Abstractions.Data
 @model IEnumerable<HD.Station.MediaManagement.Mvc.Features.MediaFile.Models.MediaFileViewModel>
 
 @{
@@ -11,761 +7,616 @@
     var filter = (string)(ViewBag.Filter ?? "");
 }
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-8">
-            <!-- Alert Messages -->
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i> @TempData["ErrorMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .media-card {
+            background: white;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+        }
+
+            .media-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
             }
 
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0">Quản lý Media Files</h2>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                    <i class="fas fa-plus me-1"></i> Upload File
-                </button>
-            </div>
+        .media-thumbnail {
+            height: 200px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
 
-            <!-- Search -->
-            <div class="row justify-content-center mb-4">
+            .media-thumbnail img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .media-thumbnail video {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .video-play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .file-icon-display {
+            font-size: 3rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .card-content {
+            padding: 1.25rem;
+        }
+
+        .file-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            height: 2.4em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.2;
+        }
+
+        .file-details {
+            margin-bottom: 1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .action-buttons {
+            border-top: 1px solid #f8f9fa;
+            padding-top: 1rem;
+            margin-top: auto;
+        }
+
+        .btn-action {
+            width: 100%;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.6rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+            .btn-action:hover {
+                transform: translateY(-1px);
+            }
+
+        .search-container {
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .search-input {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+
+            .search-input:focus {
+                outline: none;
+                box-shadow: none;
+            }
+
+        .search-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0 50px 50px 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border: none;
+        }
+
+        .modal-footer {
+            border: none;
+            background: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: border-color 0.3s ease;
+        }
+
+            .form-control:focus, .form-select:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+
+        .alert {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+
+        {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        {
+            height: 150px;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .file-name {
+            font-size: 0.9rem;
+        }
+
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-section">
+        <div class="container">
+            <div class="row align-items-center">
                 <div class="col-md-8">
-                    <form method="get" class="d-flex">
-                        <input type="text" name="filter" class="form-control me-2"
-                               placeholder="Tìm kiếm file..." value="@filter">
-                        <button type="submit" class="btn btn-outline-primary">Tìm</button>
-                    </form>
+                    <h1 class="mb-1">
+                        <i class="fas fa-photo-video me-3"></i>Media Manager
+                    </h1>
+                    <p class="mb-0 opacity-75">Quản lý và tổ chức file media của bạn</p>
                 </div>
-            </div>
-
-            <!-- File List -->
-            @if (Model.Any())
-            {
-                <div class="row g-4" id="fileList">
-                    @foreach (var item in Model)
-                    {
-                        <div class="col-lg-6 col-xl-4" data-file-id="@item.Id">
-                            <div class="card h-100 shadow-sm">
-                                <!-- File Preview -->
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
-                                    @if (item.MediaType == MediaTypeEnum.Image)
-                                    {
-                                        <img src="@item.StoragePath" class="img-fluid rounded" style="max-height: 100%; max-width: 100%;" alt="@item.FileName">
-                                    }
-                                    else if (item.MediaType == MediaTypeEnum.Video)
-                                    {
-                                        <video class="w-100 h-100 rounded" style="object-fit: cover;" controls>
-                                            <source src="@item.StoragePath" type="video/@item.Format.ToString().ToLower()">
-                                            Trình duyệt không hỗ trợ video.
-                                        </video>
-                                    }
-                                    else if (item.MediaType == MediaTypeEnum.Audio)
-                                    {
-                                        <div class="text-center">
-                                            <i class="fas fa-music fa-3x text-primary mb-2"></i>
-                                            <audio controls class="w-100">
-                                                <source src="@item.StoragePath" type="audio/@item.Format.ToString().ToLower()">
-                                                Trình duyệt không hỗ trợ audio.
-                                            </audio>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="text-center">
-                                            <i class="fas fa-file fa-3x text-muted"></i>
-                                            <p class="mt-2 text-muted mb-0">@item.Format</p>
-                                        </div>
-                                    }
-                                </div>
-
-                                <!-- File Info -->
-                                <div class="card-body">
-                                    <h6 class="card-title text-truncate mb-2" title="@item.FileName">@item.FileName</h6>
-                                    <div class="row text-muted small mb-2">
-                                        <div class="col-6">
-                                            <span class="badge bg-light text-dark">@item.MediaType</span>
-                                        </div>
-                                        <div class="col-6 text-end">
-                                            @((item.Size / 1024).ToString("N0")) KB
-                                        </div>
-                                    </div>
-                                    <div class="row text-muted small">
-                                        <div class="col-6">@item.Format</div>
-                                        <div class="col-6 text-end">@item.UploadTime.ToString("dd/MM/yyyy")</div>
-                                    </div>
-
-                                    @if (!string.IsNullOrEmpty(item.Description))
-                                    {
-                                        <p class="card-text small text-muted mt-2 mb-0">@item.Description</p>
-                                    }
-
-                                    <!-- Storage Path -->
-                                    <div class="mt-2">
-                                        <small class="text-muted d-block text-truncate" title="@item.StoragePath">
-                                            <i class="fas fa-folder me-1"></i> @item.StoragePath
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="card-footer bg-transparent border-0 pt-0">
-                                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                                        <button type="button" class="btn btn-outline-info btn-sm flex-fill"
-                                                onclick="showDetails('@item.Id')">
-                                            <i class="fas fa-info-circle me-1"></i> Chi tiết
-                                        </button>
-                                        <button type="button" class="btn btn-outline-warning btn-sm flex-fill"
-                                                onclick="editFile('@item.Id')">
-                                            <i class="fas fa-edit me-1"></i> Sửa
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm flex-fill"
-                                                onclick="confirmDelete('@item.Id', '@item.FileName')">
-                                            <i class="fas fa-trash me-1"></i> Xóa
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Pagination -->
-                <div class="d-flex justify-content-center mt-4">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination">
-                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                                <a class="page-link" asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-filter="@filter">
-                                    Trước
-                                </a>
-                            </li>
-                            <li class="page-item active">
-                                <span class="page-link">@currentPage</span>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-filter="@filter">
-                                    Sau
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            }
-            else
-            {
-                <!-- Empty State -->
-                <div class="text-center py-5">
-                    <div class="mb-4">
-                        <i class="fas fa-folder-open fa-4x text-muted"></i>
-                    </div>
-                    <h4 class="text-muted mb-2">Chưa có file nào</h4>
-                    <p class="text-muted mb-4">Hãy upload file đầu tiên của bạn</p>
-                    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                        <i class="fas fa-plus me-1"></i> Upload File Đầu Tiên
+                <div class="col-md-4 text-end">
+                    <button type="button" class="btn btn-light btn-lg shadow" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload File
                     </button>
                 </div>
-            }
-        </div>
-    </div>
-</div>
-
-<!-- Upload Modal -->
-<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="uploadModalLabel">Upload File Mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" enctype="multipart/form-data" action="@Url.Action("Create", "MediaFiles")">
-                <div class="modal-body">
-                    @Html.AntiForgeryToken()
-
-                    <div class="mb-3">
-                        <label for="FileUpload" class="form-label">Chọn File *</label>
-                        <input type="file" class="form-control" id="FileUpload" name="FileUpload" required>
-                        <div class="form-text">Hỗ trợ: Image, Video, Audio, Document</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="Description" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="Description" name="Description" rows="3" placeholder="Nhập mô tả cho file..."></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="MediaType" class="form-label">Loại Media *</label>
-                                <select class="form-control" id="MediaType" name="MediaType" required>
-                                    <option value="">-- Chọn loại media --</option>
-                                    @foreach (var mediaType in Enum.GetValues<MediaTypeEnum>())
-                                    {
-                                        <option value="@mediaType">@mediaType</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="Format" class="form-label">Định dạng *</label>
-                                <select class="form-control" id="Format" name="Format" required>
-                                    <option value="">-- Chọn định dạng --</option>
-                                    @foreach (var format in Enum.GetValues<FormatEnum>())
-                                    {
-                                        <option value="@format">@format</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="StoragePath" class="form-label">Đường dẫn lưu trữ</label>
-                        <div class="input-group">
-                            <span class="input-group-text">/</span>
-                            <input type="text" class="form-control" id="StoragePath" name="StoragePath"
-                                   placeholder="uploads/images/my-file.jpg (để trống để tự động tạo)">
-                        </div>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i> Đường dẫn tương đối từ thư mục wwwroot. Ví dụ: uploads/images/my-file.jpg
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-upload me-1"></i> Upload
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Details Modal -->
-<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="detailsModalLabel">Chi tiết File</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="detailsModalBody">
-                <!-- Content will be loaded dynamically -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <a id="detailsDownloadLink" href="#" class="btn btn-primary" download>
-                    <i class="fas fa-download me-1"></i> Tải xuống
-                </a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Edit Modal -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editModalLabel">Chỉnh sửa File</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="container">
+        <!-- Alert Messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <form id="editForm" method="post" action="@Url.Action("Update", "MediaFiles")">
-                <div class="modal-body">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" id="EditId" name="Id">
-                    <input type="hidden" id="EditHash" name="Hash">
-                    <input type="hidden" id="EditSize" name="Size">
-                    <input type="hidden" id="EditUploadTime" name="UploadTime">
-                    <input type="hidden" id="EditMediaInfoJson" name="MediaInfoJson">
-                    <input type="hidden" id="EditStoragePath" name="StoragePath">
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
 
-                    <div class="mb-3">
-                        <label for="EditFileName" class="form-label">Tên File</label>
-                        <input type="text" class="form-control" id="EditFileName" name="FileName" readonly>
+        <!-- Search Section -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-6">
+                <form method="get">
+                    <div class="search-container d-flex">
+                        <input type="text" name="filter" class="form-control search-input flex-grow-1"
+                               placeholder="🔍 Tìm kiếm file..." value="@filter">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="EditDescription" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="EditDescription" name="Description" rows="3"></textarea>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="EditMediaType" class="form-label">Loại Media</label>
-                                <select class="form-control" id="EditMediaType" name="MediaType">
-                                    @foreach (var mediaType in Enum.GetValues<MediaTypeEnum>())
-                                    {
-                                        <option value="@mediaType">@mediaType</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="EditFormat" class="form-label">Định dạng</label>
-                                <select class="form-control" id="EditFormat" name="Format">
-                                    @foreach (var format in Enum.GetValues<FormatEnum>())
-                                    {
-                                        <option value="@format">@format</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="EditStatus" class="form-label">Trạng thái</label>
-                        <select class="form-control" id="EditStatus" name="Status">
-                            @foreach (var status in Enum.GetValues<StatusEnum>())
-                            {
-                                <option value="@status">@status</option>
-                            }
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Đường dẫn lưu trữ</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-folder"></i></span>
-                            <input type="text" class="form-control" id="EditStoragePathDisplay" readonly>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Lưu thay đổi
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
-</div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteModalLabel">
-                    <i class="fas fa-exclamation-triangle me-1"></i> Xác nhận xóa
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Files Grid -->
+        @if (Model.Any())
+        {
+            <div class="row g-4">
+                @foreach (var item in Model)
+                {
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card media-card">
+                            <!-- Media Thumbnail -->
+                            <div class="media-thumbnail">
+                                @if (item.MediaType == MediaTypeEnum.Image)
+                                {
+                                    <img src="@item.StoragePath" alt="@item.FileName" loading="lazy">
+                                }
+                                else if (item.MediaType == MediaTypeEnum.Video)
+                                {
+                                    <video preload="none" muted>
+                                        <source src="@item.StoragePath" type="video/mp4">
+                                    </video>
+                                    <div class="video-play-icon">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                }
+                                else if (item.MediaType == MediaTypeEnum.Audio)
+                                {
+                                    <div class="text-center">
+                                        <i class="fas fa-music file-icon-display text-info"></i>
+                                        <div class="fw-bold text-muted">Audio File</div>
+                                    </div>
+                                }
+                                else if (item.MediaType == MediaTypeEnum.Document)
+                                {
+                                    <div class="text-center">
+                                        <i class="fas fa-file-alt file-icon-display text-warning"></i>
+                                        <div class="fw-bold text-muted">Document</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center">
+                                        <i class="fas fa-file file-icon-display text-secondary"></i>
+                                        <div class="fw-bold text-muted">Other File</div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="card-content d-flex flex-column">
+                                <h6 class="file-name" title="@item.FileName">@item.FileName</h6>
+
+                                <div class="file-details">
+                                    <div class="detail-row">
+                                        <span class="detail-label">Loại:</span>
+                                        <span class="badge bg-primary">@item.MediaType</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Định dạng:</span>
+                                        <span class="badge bg-info">@item.Format</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Kích thước:</span>
+                                        <span class="detail-value">@((item.Size / 1024).ToString("N0")) KB</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Ngày tải:</span>
+                                        <span class="detail-value">@item.UploadTime.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Trạng thái:</span>
+                                        <span class="badge @(item.Status == StatusEnum.Active ? "bg-success" : "bg-secondary")">
+                                            @item.Status
+                                        </span>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <div class="text-muted small mb-3">
+                                        <i class="fas fa-quote-left me-1"></i>@item.Description
+                                    </div>
+                                }
+
+                                <!-- Action Buttons -->
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-outline-info btn-action"
+                                            onclick="showFileDetails('@item.Id')">
+                                        <i class="fas fa-info-circle me-2"></i>Chi tiết
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-action"
+                                            onclick="editFile('@item.Id')">
+                                        <i class="fas fa-edit me-2"></i>Sửa
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-action"
+                                            onclick="confirmDelete('@item.Id', '@Html.Raw(Html.Encode(item.FileName))')">
+                                        <i class="fas fa-trash me-2"></i>Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
-            <div class="modal-body text-center">
-                <div class="mb-3">
-                    <i class="fas fa-file-alt fa-3x text-muted"></i>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-filter="@filter">
+                            <i class="fas fa-chevron-left me-1"></i>Trước
+                        </a>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link">Trang @currentPage</span>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-filter="@filter">
+                            Sau <i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+        else
+        {
+            <!-- Empty State -->
+            <div class="empty-state">
+                <div class="mb-4">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 4rem; color: #667eea; opacity: 0.7;"></i>
                 </div>
-                <p class="mb-1">Bạn có chắc chắn muốn xóa file:</p>
-                <p class="font-weight-bold text-danger" id="deleteFileName"></p>
-                <div class="alert alert-warning">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i> Hành động này sẽ xóa file khỏi hệ thống và không thể hoàn tác!
-                    </small>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted d-block" id="deleteStoragePath"></small>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i> Hủy bỏ
+                <h3 class="text-muted mb-3">Chưa có file nào</h3>
+                <p class="text-muted mb-4">Bắt đầu xây dựng thư viện media của bạn bằng cách upload file đầu tiên</p>
+                <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-plus me-2"></i>Upload File Đầu Tiên
                 </button>
-                <form id="deleteForm" method="post" style="display: inline;">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-1"></i> Xóa ngay
-                    </button>
+            </div>
+        }
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload File Mới
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" enctype="multipart/form-data" action="@Url.Action("Create", "MediaFiles")" id="uploadForm">
+                    <div class="modal-body">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label for="FileUpload" class="form-label fw-bold">
+                                <i class="fas fa-file me-1"></i>Chọn File *
+                            </label>
+                            <input type="file" class="form-control" id="FileUpload" name="FileUpload" required>
+                            <div class="form-text">Hỗ trợ: Images (JPG, PNG, GIF), Videos (MP4, AVI), Audio (MP3, WAV), Documents (PDF, DOC)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Description" class="form-label fw-bold">
+                                <i class="fas fa-comment-alt me-1"></i>Mô tả
+                            </label>
+                            <textarea class="form-control" id="Description" name="Description" rows="3"
+                                      placeholder="Nhập mô tả cho file của bạn..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="MediaType" class="form-label fw-bold">
+                                        <i class="fas fa-tags me-1"></i>Loại Media *
+                                    </label>
+                                    <select class="form-select" id="MediaType" name="MediaType" required>
+                                        <option value="">-- Chọn loại media --</option>
+                                        @foreach (var mediaType in Enum.GetValues<MediaTypeEnum>())
+                                        {
+                                            <option value="@mediaType">@mediaType</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="Format" class="form-label fw-bold">
+                                        <i class="fas fa-file-code me-1"></i>Định dạng *
+                                    </label>
+                                    <select class="form-select" id="Format" name="Format" required>
+                                        <option value="">-- Chọn định dạng --</option>
+                                        @foreach (var format in Enum.GetValues<FormatEnum>())
+                                        {
+                                            <option value="@format">@format</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Hủy
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-1"></i>Upload File
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="d-none">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="text-center text-white">
+            <div class="spinner mb-3"></div>
+            <h5>Đang xử lý...</h5>
+            <p>Vui lòng đợi trong giây lát</p>
+        </div>
     </div>
-</div>
 
-<!-- JavaScript - Đặt trực tiếp trong view để tránh lỗi -->
-<script>
-    console.log('JavaScript loaded successfully');
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    // Đảm bảo DOM đã load xong
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM Content Loaded');
-
-        // Kiểm tra Bootstrap
-        if (typeof bootstrap === 'undefined') {
-            console.error('Bootstrap JavaScript chưa được load!');
-        } else {
-            console.log('Bootstrap loaded successfully');
-        }
-
-        // Auto-detect file type on upload
-        const fileInput = document.getElementById('FileUpload');
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
-                const file = this.files[0];
-                if (!file) return;
-
-                const extension = file.name.split('.').pop().toLowerCase();
-                const mediaTypeSelect = document.getElementById('MediaType');
-                const formatSelect = document.getElementById('Format');
-
-                // Auto-select media type
-                if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
-                    mediaTypeSelect.value = 'Image';
-                } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension)) {
-                    mediaTypeSelect.value = 'Video';
-                } else if (['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(extension)) {
-                    mediaTypeSelect.value = 'Audio';
-                } else if (['pdf', 'doc', 'docx', 'txt', 'rtf'].includes(extension)) {
-                    mediaTypeSelect.value = 'Document';
-                }
-
-                // Auto-select format
-                const formatValue = extension.toUpperCase();
-                const formatOption = formatSelect.querySelector(`option[value="${formatValue}"]`);
-                if (formatOption) {
-                    formatSelect.value = formatValue;
-                }
-
-                // Auto-suggest storage path
-                const storagePath = document.getElementById('StoragePath');
-                if (!storagePath.value) {
-                    const mediaType = mediaTypeSelect.value.toLowerCase();
-                    storagePath.value = `uploads/${mediaType}s/${file.name}`;
-                }
-            });
-        }
-
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert.alert-success, .alert.alert-danger');
-            alerts.forEach(function(alert) {
-                if (bootstrap && bootstrap.Alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }
+    <script>
+        // Auto-hide alerts
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
             });
         }, 5000);
-    });
 
-    // Show loading overlay
-    function showLoading() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.classList.remove('d-none');
-        }
-    }
+        // File upload auto-detection
+        document.getElementById('FileUpload').addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
 
-    // Hide loading overlay
-    function hideLoading() {
-        const overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
-            overlay.classList.add('d-none');
-        }
-    }
+            const fileName = file.name.toLowerCase();
+            const mediaTypeSelect = document.getElementById('MediaType');
+            const formatSelect = document.getElementById('Format');
 
-    // Show Details Function
-    function showDetails(fileId) {
-        console.log('showDetails called with fileId:', fileId);
-        showLoading();
-
-        // Sử dụng đúng URL pattern cho ASP.NET Core
-        fetch(`@Url.Action("GetDetails", "MediaFiles")?id=${fileId}`)
-        .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response URL:', response.url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Auto-detect media type and format
+            if (fileName.includes('.jpg') || fileName.includes('.jpeg')) {
+                mediaTypeSelect.value = 'Image';
+                formatSelect.value = 'Jpg';
+            } else if (fileName.includes('.png')) {
+                mediaTypeSelect.value = 'Image';
+                formatSelect.value = 'Png';
+            } else if (fileName.includes('.gif')) {
+                mediaTypeSelect.value = 'Image';
+                formatSelect.value = 'Gif';
+            } else if (fileName.includes('.mp4')) {
+                mediaTypeSelect.value = 'Video';
+                formatSelect.value = 'Mp4';
+            } else if (fileName.includes('.avi')) {
+                mediaTypeSelect.value = 'Video';
+                formatSelect.value = 'Avi';
+            } else if (fileName.includes('.mov')) {
+                mediaTypeSelect.value = 'Video';
+                formatSelect.value = 'Mov';
+            } else if (fileName.includes('.mp3')) {
+                mediaTypeSelect.value = 'Audio';
+                formatSelect.value = 'Mp3';
+            } else if (fileName.includes('.wav')) {
+                mediaTypeSelect.value = 'Audio';
+                formatSelect.value = 'Wav';
+            } else if (fileName.includes('.pdf')) {
+                mediaTypeSelect.value = 'Document';
+                formatSelect.value = 'Pdf';
+            } else if (fileName.includes('.doc')) {
+                mediaTypeSelect.value = 'Document';
+                formatSelect.value = 'Doc';
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Response data:', data);
-            hideLoading();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Unknown error');
-            }
-
-            document.getElementById('detailsModalLabel').textContent = data.fileName;
-            const downloadLink = document.getElementById('detailsDownloadLink');
-            if (downloadLink) {
-                downloadLink.href = data.storagePath;
-            }
-
-            let mediaPreview = '';
-            if (data.mediaType === 'Image') {
-                mediaPreview = `<div class="text-center mb-4">
-                    <img src="${data.storagePath}" class="img-fluid rounded" style="max-height: 400px;" alt="${data.fileName}"
-                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBOb3QgRm91bmQ8L3RleHQ+PC9zdmc+'">
-                </div>`;
-            } else if (data.mediaType === 'Video') {
-                mediaPreview = `<div class="text-center mb-4">
-                    <video controls class="w-100 rounded" style="max-height: 400px;">
-                        <source src="${data.storagePath}" type="video/${data.format.toLowerCase()}">
-                        Trình duyệt không hỗ trợ video.
-                    </video>
-                </div>`;
-            } else if (data.mediaType === 'Audio') {
-                mediaPreview = `<div class="text-center mb-4">
-                    <i class="fas fa-music fa-3x text-primary mb-3"></i>
-                    <audio controls class="w-100">
-                        <source src="${data.storagePath}" type="audio/${data.format.toLowerCase()}">
-                        Trình duyệt không hỗ trợ audio.
-                    </audio>
-                </div>`;
-            } else {
-                mediaPreview = `<div class="text-center mb-4">
-                    <i class="fas fa-file fa-4x text-muted mb-3"></i>
-                    <p class="text-muted">${data.format} File</p>
-                </div>`;
-            }
-
-            document.getElementById('detailsModalBody').innerHTML = `
-                ${mediaPreview}
-                <div class="row">
-                    <div class="col-md-6">
-                        <dl class="row">
-                            <dt class="col-sm-4">ID:</dt>
-                            <dd class="col-sm-8"><code>${data.id}</code></dd>
-                            <dt class="col-sm-4">Tên file:</dt>
-                            <dd class="col-sm-8">${data.fileName}</dd>
-                            <dt class="col-sm-4">Loại media:</dt>
-                            <dd class="col-sm-8"><span class="badge bg-primary">${data.mediaType}</span></dd>
-                            <dt class="col-sm-4">Định dạng:</dt>
-                            <dd class="col-sm-8"><span class="badge bg-secondary">${data.format}</span></dd>
-                            <dt class="col-sm-4">Kích thước:</dt>
-                            <dd class="col-sm-8">${(data.size / 1024).toFixed(0)} KB</dd>
-                        </dl>
-                    </div>
-                    <div class="col-md-6">
-                        <dl class="row">
-                            <dt class="col-sm-4">Upload time:</dt>
-                            <dd class="col-sm-8">${new Date(data.uploadTime).toLocaleString('vi-VN')}</dd>
-                            <dt class="col-sm-4">Trạng thái:</dt>
-                            <dd class="col-sm-8"><span class="badge ${data.status === 'Active' ? 'bg-success' : 'bg-secondary'}">${data.status}</span></dd>
-                            <dt class="col-sm-4">Đường dẫn:</dt>
-                            <dd class="col-sm-8"><code class="font-monospace">${data.storagePath}</code></dd>
-                            <dt class="col-sm-4">Hash:</dt>
-                            <dd class="col-sm-8"><small class="text-muted font-monospace">${data.hash ? data.hash.substring(0, 20) + '...' : 'N/A'}</small></dd>
-                            <dt class="col-sm-4">Mô tả:</dt>
-                            <dd class="col-sm-8">${data.description || 'Không có mô tả'}</dd>
-                        </dl>
-                    </div>
-                </div>
-                ${data.mediaInfoJson && data.mediaInfoJson !== '{}' ? `<div class="mt-3">
-                    <h6>Media Info:</h6>
-                    <pre class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">${data.mediaInfoJson}</pre>
-                </div>` : ''}
-            `;
-
-            const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
-            detailsModal.show();
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Error in showDetails:', error);
-            alert('Không thể tải thông tin file: ' + error.message);
         });
-    }
 
-    // Edit File Function
-    function editFile(fileId) {
-        console.log('editFile called with fileId:', fileId);
-        showLoading();
-
-        fetch(`@Url.Action("GetDetails", "MediaFiles")?id=${fileId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            hideLoading();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Unknown error');
-            }
-
-            // Populate edit form
-            document.getElementById('EditId').value = data.id;
-            document.getElementById('EditFileName').value = data.fileName;
-            document.getElementById('EditDescription').value = data.description || '';
-            document.getElementById('EditMediaType').value = data.mediaType;
-            document.getElementById('EditFormat').value = data.format;
-            document.getElementById('EditStatus').value = data.status;
-            document.getElementById('EditHash').value = data.hash || '';
-            document.getElementById('EditSize').value = data.size;
-            document.getElementById('EditUploadTime').value = data.uploadTime;
-            document.getElementById('EditMediaInfoJson').value = data.mediaInfoJson || '';
-            document.getElementById('EditStoragePath').value = data.storagePath;
-
-            const displayPath = document.getElementById('EditStoragePathDisplay');
-            if (displayPath) {
-                displayPath.value = data.storagePath;
-            }
-
-            const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-            editModal.show();
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Error in editFile:', error);
-            alert('Không thể tải thông tin file để chỉnh sửa: ' + error.message);
-        });
-    }
-
-    // Confirm Delete Function
-    function confirmDelete(fileId, fileName) {
-        console.log('confirmDelete called with fileId:', fileId, 'fileName:', fileName);
-        showLoading();
-
-        fetch(`@Url.Action("GetDetails", "MediaFiles")?id=${fileId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            hideLoading();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Unknown error');
-            }
-
-            document.getElementById('deleteFileName').textContent = fileName;
-            const pathElement = document.getElementById('deleteStoragePath');
-            if (pathElement) {
-                pathElement.textContent = `Đường dẫn: ${data.storagePath}`;
-            }
-
-            const deleteForm = document.getElementById('deleteForm');
-            if (deleteForm) {
-                deleteForm.action = `@Url.Action("Delete", "MediaFiles", new { id = "__ID__" })`.replace('__ID__', fileId);
-            }
-
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            deleteModal.show();
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Error in confirmDelete:', error);
-            alert('Không thể tải thông tin file để xóa: ' + error.message);
-        });
-    }
-</script>
-
-<style>
-    .card {
-        transition: transform 0.2s ease-in-out;
-        border: 1px solid #e3e6f0;
-    }
-
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('d-none');
         }
 
-    .card-img-top {
-        border-bottom: 1px solid #e3e6f0;
-        height: 180px;
-        object-fit: cover;
-        background-color: #f8f9fa;
-    }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        }
 
-    .btn-group .btn, .d-grid .btn {
-        font-size: 0.875rem;
-    }
+        function getAntiForgeryToken() {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            return token ? token.value : '';
+        }
 
-    audio, video {
-        outline: none;
-    }
-
-    .text-truncate {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .container {
-        max-width: 1200px;
-    }
-
-    .g-4 > * {
-        padding: 0.75rem;
-    }
-
-    .badge {
-        font-size: 0.75rem;
-    }
-
-    .alert {
-        border-radius: 0.5rem;
-        border: none;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-
-    /* Loading overlay */
-    #loadingOverlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-
-    /* Code and monospace text */
-    code, .font-monospace {
-        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 0.875em;
-        background-color: #f8f9fa;
-        padding: 0.2em 0.4em;
-        border-radius: 0.25rem;
-    }
-
-    /* Modal improvements */
-    .modal-xl {
-        max-width: 90%;
-    }
-
-    /* Buttons with icons */
-    .btn i {
-        margin-right: 0.25rem;
-    }
-
-    {
-        flex-direction: column;
-    }
-
-    .card-footer .btn {
-        margin-bottom: 0.25rem;
-    }
-
-    }
-</style>
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

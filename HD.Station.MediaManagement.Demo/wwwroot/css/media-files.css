@@ -1,0 +1,165 @@
+﻿console.log('🚀 Initializing Media Files System...');
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('✅ Media Files System Ready');
+
+    initializeFileUpload();
+    initializeAlerts();
+
+    console.log('📋 All components initialized successfully');
+});
+
+function initializeFileUpload() {
+    const fileInput = document.getElementById('FileUpload');
+    if (fileInput)
+
+{
+    fileInput .addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                console.log('📁 File selected:', file.name);
+                autoDetectFileType(file);
+                showFilePreview(file);
+            }
+        });
+    console .log('📤 File upload initialized');
+}
+
+}
+
+// Initialize alerts
+function initializeAlerts() {
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(alert => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+    console .log('🔔 Alerts system initialized');
+}
+
+// Auto-detect file type and format
+function autoDetectFileType(file) {
+    const fileName = file.name.toLowerCase();
+    const mediaTypeSelect = document.getElementById('MediaType');
+    const formatSelect = document.getElementById('Format');
+    if (!mediaTypeSelect || !formatSelect) return;
+    console .log('🔍 Auto-detecting file type for:', fileName);
+    mediaTypeSelect .value = '';
+    formatSelect .value = '';
+    if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg'))
+
+{
+    mediaTypeSelect .value = 'Image';
+    formatSelect .value = 'Jpg';
+}
+
+else if (fileName.endsWith('.png')) {
+    mediaTypeSelect .value = 'Image';
+    formatSelect .value = 'Png';
+}
+
+else if (fileName.endsWith('.gif')) {
+    mediaTypeSelect .value = 'Image';
+    formatSelect .value = 'Gif';
+}
+
+else if (fileName.endsWith('.bmp')) {
+    mediaTypeSelect .value = 'Image';
+    formatSelect .value = 'Bmp';
+}
+
+else if (fileName.endsWith('.svg')) {
+    mediaTypeSelect .value = 'Image';
+    formatSelect .value = 'Svg';
+}
+
+else if (fileName.endsWith('.mp4')) {
+    mediaTypeSelect .value = 'Video';
+    formatSelect .value = 'Mp4';
+}
+
+else if (fileName.endsWith('.avi')) {
+    mediaTypeSelect .value = 'Video';
+    formatSelect .value = 'Avi';
+}
+
+else if (fileName.endsWith('.mov')) {
+    mediaTypeSelect .value = 'Video';
+    formatSelect .value = 'Mov';
+}
+
+else if (fileName.endsWith('.wmv')) {
+    mediaTypeSelect .value = 'Video';
+    formatSelect .value = 'Wmv';
+}
+
+else if (fileName.endsWith('.mp3')) {
+    mediaTypeSelect .value = 'Audio';
+    formatSelect .value = 'Mp3';
+}
+
+else if (fileName.endsWith('.wav')) {
+    mediaTypeSelect .value = 'Audio';
+    formatSelect .value = 'Wav';
+}
+
+else if (fileName.endsWith('.ogg')) {
+    mediaTypeSelect .value = 'Audio';
+    formatSelect .value = 'Ogg';
+}
+
+else if (fileName.endsWith('.flac')) {
+    mediaTypeSelect .value = 'Audio';
+    formatSelect .value = 'Flac';
+}
+
+else if (fileName.endsWith('.pdf')) {
+    mediaTypeSelect .value = 'Document';
+    formatSelect .value = 'Pdf';
+}
+
+else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+    mediaTypeSelect .value = 'Document';
+    formatSelect .value = fileName.endsWith('.docx') ? 'Docx' : 'Doc';
+}
+
+else if (fileName.endsWith('.txt')) {
+    mediaTypeSelect .value = 'Document';
+    formatSelect .value = 'Txt';
+}
+
+else {
+    mediaTypeSelect .value = 'Other';
+    formatSelect .value = 'Other';
+}
+
+console.log('✅ Auto-detection complete:', mediaTypeSelect.value, formatSelect.value);
+}
+
+// Show file preview (optional enhancement)
+function showFilePreview(file) {
+    console .log('📷 File preview available for:', file.name);
+}
+
+// Utility functions
+function showLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay)
+
+{
+    overlay .classList.remove('d-none');
+    console .log('⏳ Loading overlay shown');
+}
+
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay)
+
+{
+    overlay .classList.add('d-none');
+    console .log('✅ Loading overlay hidden');
+}
+}

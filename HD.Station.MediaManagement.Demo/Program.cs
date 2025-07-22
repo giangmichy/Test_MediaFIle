@@ -1,42 +1,52 @@
-﻿using System.IO;
-using Microsoft.Extensions.FileProviders;
-using HD.Station.MediaManagement.Abstractions.DependencyInjection;
+﻿using HD.Station.MediaManagement.Abstractions.DependencyInjection;
 using HD.Station.MediaManagement.SqlServer.DependencyInjection;
 using HD.Station.MediaManagement.Mvc.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Đăng ký toàn bộ Feature, Store, MVC (controllers + views)
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+
+// 1. Đăng ký toàn bộ Feature, Store, MVC
 builder.Services
     .AddMediaManagementFeature()
     .AddMediaManagementSqlServer(builder.Configuration)
-    .AddMediaManagementMvc();    
-
-// 2. Cấu hình serve MediaShare folder
-var mediaPath = builder.Configuration["MediaSharePath"];
-if (!Directory.Exists(mediaPath))
-    Directory.CreateDirectory(mediaPath);
-
-builder.Services.AddSingleton<IFileProvider>(_ =>
-    new PhysicalFileProvider(mediaPath));
+    .AddMediaManagementMvc();
 
 var app = builder.Build();
 
-// 3. Middleware
-app.UseHttpsRedirection();
-app.UseStaticFiles();  // wwwroot
-app.UseStaticFiles(new StaticFileOptions
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
 {
-    FileProvider = new PhysicalFileProvider(mediaPath),
-    RequestPath = "/media"
-});
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+
+// Static files - quan trọng!
+app.UseStaticFiles();
+
 app.UseRouting();
 app.UseAuthorization();
 
-// 4. Route mặc định đến MediaFilesController.Index
+// 2. Route mặc định đến MediaFilesController.Index
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=MediaFiles}/{action=Index}/{id?}"
-);
+    pattern: "{controller=MediaFiles}/{action=Index}/{id?}");
+
+// 3. Tạo thư mục uploads và converted nếu chưa có
+var uploadsDir = Path.Combine(app.Environment.WebRootPath, "uploads");
+var convertedDir = Path.Combine(app.Environment.WebRootPath, "converted");
+
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+
+if (!Directory.Exists(convertedDir))
+{
+    Directory.CreateDirectory(convertedDir);
+}
 
 app.Run();

@@ -15,5 +15,9 @@ namespace HD.Station.MediaManagement.Mvc.Services
         /// Trả về đường dẫn file MP4 đã convert.
         /// </summary>
         Task<string> ConvertToMp4Async(string inputPath, string outputFolder);
+
+        // 🆕 Thêm 2 methods mới
+        bool IsVideoFile(string filePath);
+        bool RequiresConversion(string filePath);
     }
 }
