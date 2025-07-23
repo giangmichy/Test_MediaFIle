@@ -17,7 +17,7 @@ namespace HD.Station.MediaManagement.Mvc.Services
         {
             _logger = logger;
 
-            // Đọc từ appsettings.json: "FFmpegSettings": { "BinFolder": "..."}
+            // Đọc từ appsettings.json: "FFmpegSettings": { "BinFolder": "...."}
             var bin = config["FFmpegSettings:BinFolder"]
                       ?? throw new InvalidOperationException("FFmpegSettings:BinFolder missing in configuration");
 

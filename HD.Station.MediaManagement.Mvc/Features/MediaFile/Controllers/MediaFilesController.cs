@@ -54,7 +54,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             }
         }
 
-        // GET: /MediaFiles/GetDetails/{id} - API lấy thông tin chi tiết cho JavaScript
+        // GET: /MediaFiles/GetDetails/{id} - API lấy thông tin chi tiết cho JavaScriptt
         [HttpGet]
         public async Task<IActionResult> GetDetails(Guid id)
         {

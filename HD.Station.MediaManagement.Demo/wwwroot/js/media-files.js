@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
             } catch (e) {
-                // Ignore if bootstrap alert is not available
+                // Ignore if bootstrap alert is not availablee
             }
         });
     }, 5000);

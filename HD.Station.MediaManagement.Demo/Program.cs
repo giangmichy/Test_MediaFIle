@@ -4,7 +4,7 @@ using HD.Station.MediaManagement.Mvc.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container..
 builder.Services.AddControllersWithViews();
 
 // 1. Đăng ký toàn bộ Feature, Store, MVC
