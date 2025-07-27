@@ -15,5 +15,9 @@ namespace HD.Station.MediaManagement.Abstractions.Data
         public StatusEnum Status { get; set; }
         public string MediaInfoJson { get; set; }
         public string Hash { get; set; }
+
+        // Thêm thuộc tính mới cho storage type
+        public StorageTypeEnum StorageType { get; set; } = StorageTypeEnum.Local;
+        public string? NetworkPath { get; set; }  // Đường dẫn UNC hoặc FTP
     }
 }

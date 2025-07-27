@@ -6,6 +6,7 @@ using HD.Station.MediaManagement.Mvc.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,19 +20,28 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
     {
         private readonly IMediaFileManager _manager;
         private readonly IFileProcessor _processor;
+        private readonly IFileStorageService _storageService;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<MediaFilesController> _logger;
+        private readonly IConfiguration _config;
+
+        // File size limits (5GB)
+        private const long MAX_FILE_SIZE = 5L * 1024 * 1024 * 1024;
 
         public MediaFilesController(
             IMediaFileManager manager,
             IFileProcessor processor,
+            IFileStorageService storageService,
             IWebHostEnvironment env,
-            ILogger<MediaFilesController> logger)
+            ILogger<MediaFilesController> logger,
+            IConfiguration config)
         {
             _manager = manager;
             _processor = processor;
+            _storageService = storageService;
             _env = env;
             _logger = logger;
+            _config = config;
         }
 
         // GET: /MediaFiles
@@ -54,7 +64,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             }
         }
 
-        // GET: /MediaFiles/GetDetails/{id} - API lấy thông tin chi tiết cho JavaScriptt
+        // GET: /MediaFiles/GetDetails/{id} - API lấy thông tin chi tiết cho JavaScript
         [HttpGet]
         public async Task<IActionResult> GetDetails(Guid id)
         {
@@ -69,18 +79,26 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     return Json(new { success = false, message = "Không tìm thấy file" });
                 }
 
-                // Đảm bảo đường dẫn có thể access được từ web
-                var storagePath = dto.StoragePath;
-                if (!storagePath.StartsWith("/"))
+                // Xử lý đường dẫn theo storage type
+                string accessPath = "";
+                bool fileExists = false;
+
+                switch (dto.StorageType)
                 {
-                    storagePath = "/" + storagePath;
+                    case StorageTypeEnum.Local:
+                        accessPath = dto.StoragePath.StartsWith("/") ? dto.StoragePath : "/" + dto.StoragePath;
+                        var physicalPath = Path.Combine(_env.WebRootPath, dto.StoragePath.TrimStart('/'));
+                        fileExists = SystemFile.Exists(physicalPath);
+                        break;
+
+                    case StorageTypeEnum.UNC:
+                    case StorageTypeEnum.FTP:
+                        accessPath = dto.NetworkPath ?? dto.StoragePath;
+                        fileExists = await _storageService.FileExistsAsync(dto.StoragePath, dto.StorageType);
+                        break;
                 }
 
-                // Kiểm tra file có tồn tại trên disk không
-                var physicalPath = Path.Combine(_env.WebRootPath, dto.StoragePath.TrimStart('/'));
-                var fileExists = SystemFile.Exists(physicalPath);
-
-                _logger.LogInformation($"File details: {dto.FileName}, Path: {storagePath}, Physical: {physicalPath}, Exists: {fileExists}");
+                _logger.LogInformation($"File details: {dto.FileName}, Storage: {dto.StorageType}, Path: {accessPath}, Exists: {fileExists}");
 
                 return Json(new
                 {
@@ -92,7 +110,9 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     format = dto.Format.ToString(),
                     size = dto.Size,
                     status = dto.Status.ToString(),
-                    storagePath = storagePath,
+                    storageType = dto.StorageType.ToString(),
+                    storagePath = accessPath,
+                    networkPath = dto.NetworkPath,
                     hash = dto.Hash,
                     uploadTime = dto.UploadTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     mediaInfoJson = dto.MediaInfoJson,
@@ -106,9 +126,11 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             }
         }
 
-        // POST: /MediaFiles/Create - Tạo file mới với FFmpeg
+        // POST: /MediaFiles/Create - Tạo file mới với multiple storage options
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequestSizeLimit(5L * 1024 * 1024 * 1024)] // 5GB limit
+        [RequestFormLimits(MultipartBodyLengthLimit = 5L * 1024 * 1024 * 1024)]
         public async Task<IActionResult> Create(MediaFileViewModel vm)
         {
             try
@@ -119,82 +141,51 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     return RedirectToAction("Index");
                 }
 
-                _logger.LogInformation($"Starting file upload: {vm.FileUpload.FileName}");
+                // Kiểm tra kích thước file
+                if (vm.FileUpload.Length > MAX_FILE_SIZE)
+                {
+                    TempData["ErrorMessage"] = $"File quá lớn! Kích thước tối đa là {MAX_FILE_SIZE / (1024 * 1024 * 1024)}GB";
+                    return RedirectToAction("Index");
+                }
 
-                // 1. Lưu file gốc vào wwwroot/uploads
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
-                Directory.CreateDirectory(uploadsFolder);
+                _logger.LogInformation($"Starting file upload: {vm.FileUpload.FileName} ({vm.FileUpload.Length:N0} bytes) to {vm.StorageType}");
 
-                var origName = Path.GetFileName(vm.FileUpload.FileName);
-                var safeFileName = Path.GetFileNameWithoutExtension(origName).Replace(" ", "_") + Path.GetExtension(origName);
-                var storedName = $"{Guid.NewGuid()}_{safeFileName}";
-                var origPath = Path.Combine(uploadsFolder, storedName);
+                // 1. Upload file theo storage type được chọn
+                string storagePath;
+                using (var stream = vm.FileUpload.OpenReadStream())
+                {
+                    storagePath = await _storageService.UploadFileAsync(stream, vm.FileUpload.FileName, vm.StorageType);
+                }
 
-                using (var fs = new FileStream(origPath, FileMode.Create))
-                    await vm.FileUpload.CopyToAsync(fs);
+                _logger.LogInformation($"File uploaded to {vm.StorageType}: {storagePath}");
 
-                _logger.LogInformation($"File uploaded to: {origPath}");
-
-                // 2. Tính hash MD5
+                // 2. Tính hash MD5 (đọc lại file từ storage)
                 string hash;
                 using (var md5 = MD5.Create())
-                using (var stream = SystemFile.OpenRead(origPath))
+                using (var stream = vm.FileUpload.OpenReadStream())
                 {
-                    hash = BitConverter.ToString(md5.ComputeHash(stream))
+                    hash = BitConverter.ToString(await md5.ComputeHashAsync(stream))
                                      .Replace("-", "")
                                      .ToLowerInvariant();
                 }
 
-                // 3. Lấy metadata JSON bằng FFprobe
+                // 3. Lấy metadata JSON bằng FFprobe (chỉ cho local files)
                 string infoJson = "{}";
-                try
-                {
-                    infoJson = await _processor.GetMediaInfoJsonAsync(origPath);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, $"FFprobe failed for file: {origPath}");
-                }
-
-                // 4. Convert video nếu cần
-                var ext = Path.GetExtension(origPath).TrimStart('.').ToLowerInvariant();
-                string finalPhysPath = origPath;
-                string finalRelPath = $"uploads/{storedName}";
-
-                if (vm.MediaType == MediaTypeEnum.Video && ext != "mp4")
+                if (vm.StorageType == StorageTypeEnum.Local)
                 {
                     try
                     {
-                        var convFolder = Path.Combine(_env.WebRootPath, "converted");
-                        Directory.CreateDirectory(convFolder);
-                        var convPath = await _processor.ConvertToMp4Async(origPath, convFolder);
-                        var convName = Path.GetFileName(convPath);
-                        finalPhysPath = convPath;
-                        finalRelPath = $"converted/{convName}";
-
-                        // Xóa file gốc sau khi convert thành công
-                        if (SystemFile.Exists(origPath))
-                        {
-                            SystemFile.Delete(origPath);
-                            _logger.LogInformation($"Original file deleted after conversion: {origPath}");
-                        }
-
-                        _logger.LogInformation($"Video converted successfully: {finalPhysPath}");
+                        var localPath = _storageService.GetFullPath(storagePath, vm.StorageType);
+                        infoJson = await _processor.GetMediaInfoJsonAsync(localPath);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"Video conversion failed for: {origPath}");
-                        TempData["ErrorMessage"] = $"Lỗi convert video: {ex.Message}";
-
-                        // Clean up original file on conversion failure
-                        if (SystemFile.Exists(origPath))
-                            SystemFile.Delete(origPath);
-
-                        return RedirectToAction("Index");
+                        _logger.LogWarning(ex, $"FFprobe failed for file: {storagePath}");
                     }
                 }
 
-                // 5. Parse extension thành FormatEnum với logic mở rộng
+                // 4. Parse extension thành FormatEnum
+                var ext = Path.GetExtension(vm.FileUpload.FileName).TrimStart('.').ToLowerInvariant();
                 FormatEnum fmt = ext switch
                 {
                     // Image formats
@@ -240,43 +231,33 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     _ => FormatEnum.Other
                 };
 
-                // Nếu convert video thành mp4, override format
-                if (vm.MediaType == MediaTypeEnum.Video && ext != "mp4" && finalRelPath.Contains("converted/"))
-                {
-                    fmt = FormatEnum.Mp4;
-                }
-
-                // 6. Verify file exists after processing
-                if (!SystemFile.Exists(finalPhysPath))
-                {
-                    throw new FileNotFoundException($"Processed file not found: {finalPhysPath}");
-                }
-
-                // 7. Tạo DTO và lưu vào database
+                // 5. Tạo DTO và lưu vào database
                 var dto = new MediaFileDto
                 {
                     Id = Guid.NewGuid(),
-                    FileName = origName,
+                    FileName = vm.FileUpload.FileName,
                     MediaType = vm.MediaType,
                     Format = fmt,
-                    Size = new FileInfo(finalPhysPath).Length,
+                    Size = vm.FileUpload.Length,
                     UploadTime = DateTime.UtcNow,
-                    StoragePath = finalRelPath, // Không có leading slash
+                    StoragePath = storagePath,
                     Description = vm.Description ?? "",
                     Status = StatusEnum.Active,
                     MediaInfoJson = infoJson,
-                    Hash = hash
+                    Hash = hash,
+                    StorageType = vm.StorageType,
+                    NetworkPath = vm.StorageType != StorageTypeEnum.Local ? _storageService.GetFullPath(storagePath, vm.StorageType) : null
                 };
 
                 var newId = await _manager.CreateAsync(vm.FileUpload, dto);
 
-                _logger.LogInformation($"File created successfully: {dto.FileName} -> {dto.StoragePath}");
-                TempData["SuccessMessage"] = $"Upload file thành công! File: {dto.FileName}";
+                _logger.LogInformation($"File created successfully: {dto.FileName} -> {vm.StorageType}:{dto.StoragePath} ({dto.Size:N0} bytes)");
+                TempData["SuccessMessage"] = $"Upload file thành công! File: {dto.FileName} - Lưu trữ: {vm.StorageType} ({(dto.Size / (1024.0 * 1024)):F1} MB)";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating media file");
+                _logger.LogError(ex, "Error creating media file with storage service");
                 TempData["ErrorMessage"] = $"Lỗi upload file: {ex.Message}";
                 return RedirectToAction("Index");
             }
@@ -305,20 +286,22 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     return Json(new { success = false, message = "Không tìm thấy file" });
                 }
 
-                // Chỉ update metadata, giữ nguyên file + hash + infoJson
+                // Chỉ update metadata, giữ nguyên file info
                 var dto = new MediaFileDto
                 {
                     Id = vm.Id,
-                    FileName = existing.FileName, // Giữ nguyên tên file gốc
+                    FileName = existing.FileName,
                     MediaType = vm.MediaType,
-                    Format = existing.Format, // Giữ nguyên format
+                    Format = existing.Format,
                     Size = existing.Size,
                     UploadTime = existing.UploadTime,
                     StoragePath = existing.StoragePath,
                     Description = vm.Description ?? "",
                     Status = vm.Status,
                     MediaInfoJson = existing.MediaInfoJson,
-                    Hash = existing.Hash
+                    Hash = existing.Hash,
+                    StorageType = existing.StorageType, // Không cho phép thay đổi storage type
+                    NetworkPath = existing.NetworkPath
                 };
 
                 await _manager.UpdateAsync(dto);
@@ -332,7 +315,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             }
         }
 
-        // POST: /MediaFiles/Delete/{id} - Xóa file (cho chức năng Delete)
+        // POST: /MediaFiles/Delete/{id} - Xóa file với storage service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(Guid id)
@@ -341,19 +324,20 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             {
                 _logger.LogInformation($"Deleting file: {id}");
 
-                // Lấy thông tin file trước khi xóa để xóa file vật lý
+                // Lấy thông tin file trước khi xóa
                 var fileDto = await _manager.GetAsync(id);
                 if (fileDto != null && !string.IsNullOrEmpty(fileDto.StoragePath))
                 {
-                    var filePath = Path.Combine(_env.WebRootPath, fileDto.StoragePath.TrimStart('/'));
-                    if (SystemFile.Exists(filePath))
+                    // Xóa file vật lý theo storage type
+                    var deleted = await _storageService.DeleteFileAsync(fileDto.StoragePath, fileDto.StorageType);
+
+                    if (deleted)
                     {
-                        SystemFile.Delete(filePath);
-                        _logger.LogInformation($"Physical file deleted: {filePath}");
+                        _logger.LogInformation($"Physical file deleted from {fileDto.StorageType}: {fileDto.StoragePath}");
                     }
                     else
                     {
-                        _logger.LogWarning($"Physical file not found for deletion: {filePath}");
+                        _logger.LogWarning($"Could not delete physical file from {fileDto.StorageType}: {fileDto.StoragePath}");
                     }
                 }
 
@@ -368,39 +352,51 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
             }
         }
 
-        // GET: /MediaFiles/StreamVideo/{id} - Stream video file với range support
+        // GET: /MediaFiles/Download/{id} - Download file từ bất kỳ storage nào
         [HttpGet]
-        public async Task<IActionResult> StreamVideo(Guid id)
+        public async Task<IActionResult> Download(Guid id)
         {
             try
             {
                 var fileDto = await _manager.GetAsync(id);
                 if (fileDto == null)
                 {
-                    _logger.LogWarning($"Video file not found in database: {id}");
-                    return NotFound();
+                    return NotFound("File không tồn tại");
                 }
 
-                var filePath = Path.Combine(_env.WebRootPath, fileDto.StoragePath.TrimStart('/'));
-                if (!SystemFile.Exists(filePath))
+                // Chỉ hỗ trợ download cho Local storage
+                if (fileDto.StorageType == StorageTypeEnum.Local)
                 {
-                    _logger.LogWarning($"Video file not found on disk: {filePath}");
-                    return NotFound();
+                    var filePath = Path.Combine(_env.WebRootPath, fileDto.StoragePath.TrimStart('/'));
+                    if (!SystemFile.Exists(filePath))
+                    {
+                        return NotFound("File không tồn tại trên hệ thống");
+                    }
+
+                    var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                    var contentType = GetContentType(fileDto.Format);
+
+                    return File(fileStream, contentType, fileDto.FileName);
                 }
-
-                var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var contentType = GetContentType(fileDto.Format);
-
-                return File(fileStream, contentType, enableRangeProcessing: true);
+                else
+                {
+                    // Đối với UNC và FTP, redirect đến đường dẫn network
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"File được lưu trữ ở {fileDto.StorageType}. Đường dẫn: {fileDto.NetworkPath}",
+                        downloadUrl = fileDto.NetworkPath
+                    });
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error streaming video {id}");
-                return StatusCode(500);
+                _logger.LogError(ex, $"Error downloading file {id}");
+                return StatusCode(500, "Lỗi tải file");
             }
         }
 
-        // Helper method để get content type - Updated với format mới
+        // Helper method để get content type
         private string GetContentType(FormatEnum format)
         {
             return format switch

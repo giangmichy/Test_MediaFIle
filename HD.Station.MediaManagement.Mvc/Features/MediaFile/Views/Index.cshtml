@@ -207,8 +207,66 @@
             animation: spin 1s linear infinite;
         }
 
-       
-    }
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .file-size-display {
+            font-size: 0.85rem;
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .large-file-indicator {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        .storage-type-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 5px;
+        }
+
+        .storage-local {
+            background: #6c757d;
+            color: white;
+        }
+
+        .storage-unc {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .storage-ftp {
+            background: #28a745;
+            color: white;
+        }
+
+        @@media (max-width: 768px) {
+            .media-thumbnail {
+                height: 150px;
+            }
+
+            .card-content {
+                padding: 1rem;
+            }
+
+            .file-name {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -220,7 +278,7 @@
                     <h1 class="mb-1">
                         <i class="fas fa-photo-video me-3"></i>Media Manager
                     </h1>
-                    <p class="mb-0 opacity-75">Quản lý và tổ chức file media của bạn</p>
+                    <p class="mb-0 opacity-75">Quản lý và tổ chức file media - Hỗ trợ Local, UNC, FTP storage lên đến 5GB</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <button type="button" class="btn btn-light btn-lg shadow" data-bs-toggle="modal" data-bs-target="#uploadModal">
@@ -273,12 +331,12 @@
                         <div class="card media-card">
                             <!-- Media Thumbnail -->
                             <div class="media-thumbnail">
-                                @if (item.MediaType == MediaTypeEnum.Image)
+                                @if (item.MediaType == MediaTypeEnum.Image && item.StorageType == StorageTypeEnum.Local)
                                 {
                                     var imagePath = item.StoragePath.StartsWith("/") ? item.StoragePath : "/" + item.StoragePath;
                                     <img src="@imagePath" alt="@item.FileName" loading="lazy">
                                 }
-                                else if (item.MediaType == MediaTypeEnum.Video)
+                                else if (item.MediaType == MediaTypeEnum.Video && item.StorageType == StorageTypeEnum.Local)
                                 {
                                     var videoPath = item.StoragePath.StartsWith("/") ? item.StoragePath : "/" + item.StoragePath;
                                     <video preload="none" muted>
@@ -304,9 +362,14 @@
                                 }
                                 else
                                 {
+                                    var storageIcon = item.StorageType == StorageTypeEnum.UNC ? "fa-network-wired" :
+                                    item.StorageType == StorageTypeEnum.FTP ? "fa-cloud" : "fa-file";
+                                    var storageColor = item.StorageType == StorageTypeEnum.UNC ? "text-warning" :
+                                    item.StorageType == StorageTypeEnum.FTP ? "text-success" : "text-secondary";
+
                                     <div class="text-center">
-                                        <i class="fas fa-file file-icon-display text-secondary"></i>
-                                        <div class="fw-bold text-muted">Other File</div>
+                                        <i class="fas @storageIcon file-icon-display @storageColor"></i>
+                                        <div class="fw-bold text-muted">@item.StorageType File</div>
                                     </div>
                                 }
                             </div>
@@ -325,8 +388,38 @@
                                         <span class="badge bg-info">@item.Format</span>
                                     </div>
                                     <div class="detail-row">
+                                        <span class="detail-label">Storage:</span>
+                                        <span class="badge storage-@(item.StorageType.ToString().ToLower())">@item.StorageType</span>
+                                    </div>
+                                    <div class="detail-row">
                                         <span class="detail-label">Kích thước:</span>
-                                        <span class="detail-value">@((item.Size / 1024).ToString("N0")) KB</span>
+                                        <span class="file-size-display">
+                                            @{
+                                                var sizeInBytes = item.Size;
+                                                if (sizeInBytes >= 1073741824) // >= 1GB
+                                                {
+                                                    var sizeInGB = Math.Round(sizeInBytes / 1073741824.0, 1);
+                                                    <text>@sizeInGB GB <span class="large-file-indicator">LARGE</span></text>
+                                                }
+                                                else if (sizeInBytes >= 1048576) // >= 1MB
+                                                {
+                                                    var sizeInMB = Math.Round(sizeInBytes / 1048576.0, 1);
+                                                    if (sizeInBytes >= 104857600) // >= 100MB
+                                                    {
+                                                        <text>@sizeInMB MB <span class="large-file-indicator">BIG</span></text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text>@sizeInMB MB</text>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    var sizeInKB = Math.Round(sizeInBytes / 1024.0, 1);
+                                                    <text>@sizeInKB KB</text>
+                                                }
+                                            }
+                                        </span>
                                     </div>
                                     <div class="detail-row">
                                         <span class="detail-label">Ngày tải:</span>
@@ -423,13 +516,23 @@
                             </label>
                             <input type="file" class="form-control" id="FileUpload" name="FileUpload" required>
                             <div class="form-text">
-                                <strong>Hỗ trợ các định dạng:</strong><br>
+                                <strong>📁 Hỗ trợ các định dạng:</strong><br>
                                 <small>
                                     • <strong>Images:</strong> JPG, JPEG, PNG, GIF, BMP, SVG, WEBP, TIFF<br>
                                     • <strong>Videos:</strong> MP4, AVI, MOV, WMV, MKV, FLV, WEBM, MPEG<br>
                                     • <strong>Audio:</strong> MP3, WAV, OGG, FLAC, AAC, M4A, WMA<br>
                                     • <strong>Documents:</strong> PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT
                                 </small>
+                                <hr class="my-2">
+                                <div class="alert alert-info py-2 px-3 mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>📊 Giới hạn kích thước:</strong> Tối đa <strong>5GB</strong> cho mỗi file<br>
+                                    <small class="text-muted">
+                                        • File > 100MB sẽ mất thêm thời gian để xử lý<br>
+                                        • Video lớn sẽ được tự động convert sang MP4 để tối ưu<br>
+                                        • Quá trình upload có thể mất từ vài phút đến vài giờ
+                                    </small>
+                                </div>
                             </div>
                         </div>
 
@@ -441,13 +544,38 @@
                                       placeholder="Nhập mô tả cho file của bạn..."></textarea>
                         </div>
 
+                        <!-- Storage Type Selection -->
+                        <div class="mb-3">
+                            <label for="StorageType" class="form-label fw-bold">
+                                <i class="fas fa-hdd me-1"></i>Phương thức lưu trữ *
+                            </label>
+                            <select class="form-select" id="StorageType" name="StorageType" required>
+                                <option value="Local">💻 Local - Lưu trên máy chủ web</option>
+                                <option value="UNC">🌐 UNC - Lưu qua đường dẫn mạng</option>
+                                <option value="FTP">📡 FTP - Lưu qua FTP server</option>
+                            </select>
+                            <div class="form-text">
+                                <div id="storageInfo" class="mt-2">
+                                    <div id="localInfo" class="alert alert-info py-2">
+                                        <i class="fas fa-server me-2"></i><strong>Local:</strong> File sẽ được lưu trực tiếp trên máy chủ web (wwwroot/uploads)
+                                    </div>
+                                    <div id="uncInfo" class="alert alert-warning py-2 d-none">
+                                        <i class="fas fa-network-wired me-2"></i><strong>UNC:</strong> File sẽ được lưu vào đường dẫn mạng (D:\MediaShare\UNC_Storage)
+                                    </div>
+                                    <div id="ftpInfo" class="alert alert-success py-2 d-none">
+                                        <i class="fas fa-cloud me-2"></i><strong>FTP:</strong> File sẽ được upload lên FTP server từ xa
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="MediaType" class="form-label fw-bold">
                                         <i class="fas fa-tags me-1"></i>Loại Media *
                                     </label>
-                                    <select class="form-select" id="MediaType" name="MediaType" required onchange="filterFormats()">
+                                    <select class="form-select" id="MediaType" name="MediaType" required>
                                         <option value="">-- Chọn loại media --</option>
                                         @foreach (var mediaType in Enum.GetValues<MediaTypeEnum>())
                                         {
@@ -463,18 +591,38 @@
                                     </label>
                                     <select class="form-select" id="Format" name="Format" required>
                                         <option value="">-- Chọn định dạng --</option>
-                                        @foreach (var format in Enum.GetValues<FormatEnum>())
-                                        {
-                                            <option value="@format" data-category="@(
-                                                format.ToString().ToLower() switch {
-                                                    "jpg" or "jpeg" or "png" or "gif" or "bmp" or "svg" or "webp" or "tiff" => "Image",
-                                                    "mp4" or "avi" or "mov" or "wmv" or "mkv" or "flv" or "webm" or "mpeg" => "Video", 
-                                                    "mp3" or "wav" or "ogg" or "flac" or "aac" or "m4a" or "wma" => "Audio",
-                                                    "pdf" or "doc" or "docx" or "xls" or "xlsx" or "ppt" or "pptx" or "txt" => "Document",
-                                                    _ => "Other"
-                                                }
-                                            )">@format</option>
-                                        }
+                                        <option value="Jpg" data-category="Image">Jpg</option>
+                                        <option value="Jpeg" data-category="Image">Jpeg</option>
+                                        <option value="Png" data-category="Image">Png</option>
+                                        <option value="Gif" data-category="Image">Gif</option>
+                                        <option value="Bmp" data-category="Image">Bmp</option>
+                                        <option value="Svg" data-category="Image">Svg</option>
+                                        <option value="Webp" data-category="Image">Webp</option>
+                                        <option value="Tiff" data-category="Image">Tiff</option>
+                                        <option value="Mp4" data-category="Video">Mp4</option>
+                                        <option value="Avi" data-category="Video">Avi</option>
+                                        <option value="Mov" data-category="Video">Mov</option>
+                                        <option value="Wmv" data-category="Video">Wmv</option>
+                                        <option value="Mkv" data-category="Video">Mkv</option>
+                                        <option value="Flv" data-category="Video">Flv</option>
+                                        <option value="Webm" data-category="Video">Webm</option>
+                                        <option value="Mpeg" data-category="Video">Mpeg</option>
+                                        <option value="Mp3" data-category="Audio">Mp3</option>
+                                        <option value="Wav" data-category="Audio">Wav</option>
+                                        <option value="Ogg" data-category="Audio">Ogg</option>
+                                        <option value="Flac" data-category="Audio">Flac</option>
+                                        <option value="Aac" data-category="Audio">Aac</option>
+                                        <option value="M4a" data-category="Audio">M4a</option>
+                                        <option value="Wma" data-category="Audio">Wma</option>
+                                        <option value="Pdf" data-category="Document">Pdf</option>
+                                        <option value="Doc" data-category="Document">Doc</option>
+                                        <option value="Docx" data-category="Document">Docx</option>
+                                        <option value="Xls" data-category="Document">Xls</option>
+                                        <option value="Xlsx" data-category="Document">Xlsx</option>
+                                        <option value="Ppt" data-category="Document">Ppt</option>
+                                        <option value="Pptx" data-category="Document">Pptx</option>
+                                        <option value="Txt" data-category="Document">Txt</option>
+                                        <option value="Other" data-category="Other">Other</option>
                                     </select>
                                 </div>
                             </div>
@@ -497,15 +645,15 @@
     <div id="loadingOverlay" class="loading-overlay d-none">
         <div class="text-center text-white">
             <div class="spinner mb-3"></div>
-            <h5>Đang xử lý...</h5>
-            <p>Vui lòng đợi trong giây lát</p>
+            <h5>Đang xử lý file...</h5>
+            <p>File lớn có thể mất vài phút để xử lý</p>
         </div>
     </div>
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Include the media files JavaScriptT -->
+
+    <!-- Include the media files JavaScript -->
     <script src="~/js/media-files.js" asp-append-version="true"></script>
 </body>
 </html>

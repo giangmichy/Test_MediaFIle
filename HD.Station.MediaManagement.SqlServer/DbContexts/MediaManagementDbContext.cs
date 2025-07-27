@@ -20,12 +20,15 @@ namespace HD.Station.MediaManagement.SqlServer.DbContexts
             {
                 b.ToTable("MediaFiles");
                 b.HasKey(e => e.Id);
+
                 b.Property(e => e.FileName)
                  .HasMaxLength(255)
                  .IsRequired();
+
                 b.Property(e => e.StoragePath)
                  .HasMaxLength(500)
                  .IsRequired();
+
                 b.Property(e => e.Description)
                  .HasMaxLength(1000);
 
@@ -33,15 +36,28 @@ namespace HD.Station.MediaManagement.SqlServer.DbContexts
                 b.Property(e => e.MediaType)
                  .HasConversion<string>()
                  .IsRequired();
+
                 b.Property(e => e.Format)
                  .HasConversion<string>()
                  .IsRequired();
+
                 b.Property(e => e.Status)
                  .HasConversion<string>()
                  .IsRequired();
 
+                // Thêm config cho storage type
+                b.Property(e => e.StorageType)
+                 .HasConversion<string>()
+                 .IsRequired()
+                 .HasDefaultValue("Local");
+
+                b.Property(e => e.NetworkPath)
+                 .HasMaxLength(500)
+                 .IsRequired(false);
+
                 b.Property(e => e.MediaInfoJson)
                  .HasColumnType("nvarchar(max)");
+
                 b.Property(e => e.Hash)
                  .HasMaxLength(100)
                  .IsRequired();

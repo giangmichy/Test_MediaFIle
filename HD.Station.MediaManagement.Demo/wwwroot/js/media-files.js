@@ -1,4 +1,4 @@
-﻿// Complete Media Files JavaScript with Format Filtering and Enhanced Auto-Detection
+﻿// Complete Media Files JavaScript with Format Filtering, Enhanced Auto-Detection and Storage Type Support
 
 console.log('🚀 Media Files JS Loading...');
 
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
             } catch (e) {
-                // Ignore if bootstrap alert is not availablee
+                // Ignore if bootstrap alert is not available
             }
         });
     }, 5000);
@@ -36,8 +36,45 @@ document.addEventListener('DOMContentLoaded', function () {
         mediaTypeSelect.addEventListener('change', filterFormats);
     }
 
+    // Storage type change event
+    const storageTypeSelect = document.getElementById('StorageType');
+    if (storageTypeSelect) {
+        storageTypeSelect.addEventListener('change', showStorageInfo);
+        // Initialize storage info on page load
+        showStorageInfo();
+    }
+
     console.log('📋 Media Files System Ready');
 });
+
+// Storage Type handling function
+function showStorageInfo() {
+    const storageType = document.getElementById('StorageType')?.value;
+
+    // Hide all info boxes
+    const localInfo = document.getElementById('localInfo');
+    const uncInfo = document.getElementById('uncInfo');
+    const ftpInfo = document.getElementById('ftpInfo');
+
+    if (localInfo) localInfo.classList.add('d-none');
+    if (uncInfo) uncInfo.classList.add('d-none');
+    if (ftpInfo) ftpInfo.classList.add('d-none');
+
+    // Show selected storage info
+    switch (storageType) {
+        case 'Local':
+            if (localInfo) localInfo.classList.remove('d-none');
+            break;
+        case 'UNC':
+            if (uncInfo) uncInfo.classList.remove('d-none');
+            break;
+        case 'FTP':
+            if (ftpInfo) ftpInfo.classList.remove('d-none');
+            break;
+    }
+
+    console.log('📁 Storage type changed to:', storageType);
+}
 
 // Format filtering function
 function filterFormats() {
@@ -302,17 +339,18 @@ function showFileDetails(fileId) {
         });
 }
 
+// Enhanced file details modal để hiển thị storage info
 function showDetailsModal(data) {
     const filePath = data.storagePath.startsWith('/') ? data.storagePath : '/' + data.storagePath;
 
     let mediaPreview = '';
-    if (data.mediaType === 'Image') {
+    if (data.mediaType === 'Image' && data.storageType === 'Local') {
         mediaPreview = `
             <div class="text-center mb-4">
                 <img src="${filePath}" class="img-fluid rounded shadow" 
                      style="max-height: 400px; max-width: 100%;" alt="${escapeHtml(data.fileName)}">
             </div>`;
-    } else if (data.mediaType === 'Video') {
+    } else if (data.mediaType === 'Video' && data.storageType === 'Local') {
         mediaPreview = `
             <div class="text-center mb-4">
                 <video controls class="w-100 rounded shadow" 
@@ -326,7 +364,7 @@ function showDetailsModal(data) {
                     </div>
                 </video>
             </div>`;
-    } else if (data.mediaType === 'Audio') {
+    } else if (data.mediaType === 'Audio' && data.storageType === 'Local') {
         mediaPreview = `
             <div class="text-center mb-4">
                 <div class="bg-light rounded p-4">
@@ -340,12 +378,19 @@ function showDetailsModal(data) {
                 </div>
             </div>`;
     } else {
+        // For UNC/FTP files or other types, show file icon
+        const storageIcon = data.storageType === 'UNC' ? 'fa-network-wired' :
+            data.storageType === 'FTP' ? 'fa-cloud' : 'fa-file';
+        const storageColor = data.storageType === 'UNC' ? 'text-warning' :
+            data.storageType === 'FTP' ? 'text-success' : 'text-muted';
+
         mediaPreview = `
             <div class="text-center mb-4">
                 <div class="bg-light rounded p-4">
-                    <i class="fas fa-file fa-4x text-muted mb-3"></i>
+                    <i class="fas ${storageIcon} fa-4x ${storageColor} mb-3"></i>
                     <h5>${data.format} File</h5>
                     <p>${escapeHtml(data.fileName)}</p>
+                    <span class="badge bg-info">${data.storageType} Storage</span>
                 </div>
             </div>`;
     }
@@ -359,25 +404,31 @@ function showDetailsModal(data) {
                     <tr><th>Tên file:</th><td>${escapeHtml(data.fileName)}</td></tr>
                     <tr><th>Loại:</th><td><span class="badge bg-primary">${data.mediaType}</span></td></tr>
                     <tr><th>Định dạng:</th><td><span class="badge bg-info">${data.format}</span></td></tr>
-                    <tr><th>Kích thước:</th><td>${formatFileSize(data.size)}</td></tr>
+                    <tr><th>Kích thước:</th><td><strong>${formatFileSize(data.size)}</strong></td></tr>
                     <tr><th>Hash:</th><td><code class="small">${data.hash}</code></td></tr>
                 </table>
             </div>
             <div class="col-md-6">
-                <h6 class="text-success mb-3"><i class="fas fa-cog me-2"></i>Chi tiết</h6>
+                <h6 class="text-success mb-3"><i class="fas fa-hdd me-2"></i>Lưu trữ & Chi tiết</h6>
                 <table class="table table-sm">
+                    <tr><th>Phương thức:</th><td><span class="badge ${data.storageType === 'Local' ? 'bg-secondary' : data.storageType === 'UNC' ? 'bg-warning' : 'bg-success'}">${data.storageType}</span></td></tr>
                     <tr><th>Ngày tải:</th><td>${new Date(data.uploadTime).toLocaleDateString('vi-VN')}</td></tr>
                     <tr><th>Trạng thái:</th><td><span class="badge bg-success">${data.status}</span></td></tr>
                     <tr><th>Đường dẫn:</th><td><code class="small">${data.storagePath}</code></td></tr>
+                    ${data.networkPath ? `<tr><th>Network Path:</th><td><code class="small">${data.networkPath}</code></td></tr>` : ''}
                     ${data.description ? `<tr><th>Mô tả:</th><td>${escapeHtml(data.description)}</td></tr>` : ''}
                 </table>
             </div>
         </div>
     `;
 
+    const downloadButton = data.storageType === 'Local' ?
+        { text: 'Tải xuống', class: 'btn-primary', click: `window.open('/MediaFiles/Download/${data.id}', '_blank')` } :
+        { text: 'Xem đường dẫn', class: 'btn-info', click: `alert('File được lưu tại: ${data.networkPath || data.storagePath}')` };
+
     showModal('Chi tiết File: ' + escapeHtml(data.fileName), modalContent, [
         { text: 'Đóng', class: 'btn-secondary', dismiss: true },
-        { text: 'Tải xuống', class: 'btn-primary', click: `window.open('${filePath}', '_blank')` }
+        downloadButton
     ]);
 }
 
@@ -415,10 +466,12 @@ function showEditModal(data) {
             <input type="hidden" name="MediaInfoJson" value="${escapeHtml(data.mediaInfoJson || '')}">
             <input type="hidden" name="StoragePath" value="${data.storagePath}">
             <input type="hidden" name="Format" value="${data.format}">
+            <input type="hidden" name="StorageType" value="${data.storageType || 'Local'}">
             
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Đang chỉnh sửa:</strong> ${escapeHtml(data.fileName)}
+                <span class="badge bg-${data.storageType === 'Local' ? 'secondary' : data.storageType === 'UNC' ? 'warning' : 'success'} ms-2">${data.storageType}</span>
             </div>
             
             <div class="mb-3">

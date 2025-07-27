@@ -36,6 +36,13 @@ namespace HD.Station.MediaManagement.Mvc.Features.MediaFile.Models
         [Display(Name = "Trạng thái")]
         public StatusEnum Status { get; set; } = StatusEnum.Active;
 
+        // Thêm thuộc tính mới cho storage
+        [Display(Name = "Phương thức lưu trữ")]
+        public StorageTypeEnum StorageType { get; set; } = StorageTypeEnum.Local;
+
+        [Display(Name = "Đường dẫn mạng")]
+        public string? NetworkPath { get; set; }
+
         // Metadata
         public string? MediaInfoJson { get; set; }
         public string? Hash { get; set; }

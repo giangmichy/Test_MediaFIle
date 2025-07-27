@@ -17,7 +17,9 @@ namespace HD.Station.MediaManagement.SqlServer.Mapping
             Description = e.Description,
             Status = e.Status,
             MediaInfoJson = e.MediaInfoJson,
-            Hash = e.Hash
+            Hash = e.Hash,
+            StorageType = e.StorageType,
+            NetworkPath = e.NetworkPath
         };
 
         public static MediaFileEntity ToEntity(this MediaFileDto dto) => new MediaFileEntity
@@ -32,7 +34,9 @@ namespace HD.Station.MediaManagement.SqlServer.Mapping
             Description = dto.Description,
             Status = dto.Status,
             MediaInfoJson = dto.MediaInfoJson,
-            Hash = dto.Hash
+            Hash = dto.Hash,
+            StorageType = dto.StorageType,
+            NetworkPath = dto.NetworkPath
         };
     }
 }
