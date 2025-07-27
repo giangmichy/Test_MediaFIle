@@ -1,4 +1,7 @@
-﻿using HD.Station.MediaManagement.Abstractions.Data;
+﻿// 🔧 FIX 1: MediaFileViewModelMapping.cs - Thiếu map StorageType
+// File: HD.Station.MediaManagement.Mvc/Mapping/MediaFileViewModelMapping.cs
+
+using HD.Station.MediaManagement.Abstractions.Data;
 using HD.Station.MediaManagement.Mvc.Features.MediaFile.Models;
 
 namespace HD.Station.MediaManagement.Mvc.Mapping
@@ -20,7 +23,10 @@ namespace HD.Station.MediaManagement.Mvc.Mapping
                 Description = dto.Description,
                 Status = dto.Status,
                 MediaInfoJson = dto.MediaInfoJson,
-                Hash = dto.Hash
+                Hash = dto.Hash,
+
+                StorageType = dto.StorageType,
+                NetworkPath = dto.NetworkPath
             };
         }
 
@@ -39,7 +45,10 @@ namespace HD.Station.MediaManagement.Mvc.Mapping
                 Description = vm.Description,
                 Status = vm.Status,
                 MediaInfoJson = vm.MediaInfoJson,
-                Hash = vm.Hash
+                Hash = vm.Hash,
+
+                StorageType = vm.StorageType,
+                NetworkPath = vm.NetworkPath
             };
         }
     }

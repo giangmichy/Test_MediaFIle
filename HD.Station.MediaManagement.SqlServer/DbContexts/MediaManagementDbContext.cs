@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using HD.Station.MediaManagement.SqlServer.Stores;
+using HD.Station.MediaManagement.Abstractions.Data;
 
 namespace HD.Station.MediaManagement.SqlServer.DbContexts
 {
@@ -45,11 +46,9 @@ namespace HD.Station.MediaManagement.SqlServer.DbContexts
                  .HasConversion<string>()
                  .IsRequired();
 
-                // Thêm config cho storage type
                 b.Property(e => e.StorageType)
                  .HasConversion<string>()
-                 .IsRequired()
-                 .HasDefaultValue("Local");
+                 .IsRequired();
 
                 b.Property(e => e.NetworkPath)
                  .HasMaxLength(500)
