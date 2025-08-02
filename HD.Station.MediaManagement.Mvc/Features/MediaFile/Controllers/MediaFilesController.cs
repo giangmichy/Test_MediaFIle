@@ -141,7 +141,6 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // Kiểm tra kích thước file
                 if (vm.FileUpload.Length > MAX_FILE_SIZE)
                 {
                     TempData["ErrorMessage"] = $"File quá lớn! Kích thước tối đa là {MAX_FILE_SIZE / (1024 * 1024 * 1024)}GB";
@@ -150,7 +149,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
 
                 _logger.LogInformation($"Starting file upload: {vm.FileUpload.FileName} ({vm.FileUpload.Length:N0} bytes) to {vm.StorageType}");
 
-                // 1. Upload file theo storage type được chọn
+                // 1. Upload file theo storage type
                 string storagePath;
                 using (var stream = vm.FileUpload.OpenReadStream())
                 {
@@ -159,7 +158,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
 
                 _logger.LogInformation($"File uploaded to {vm.StorageType}: {storagePath}");
 
-                // 2. Tính hash MD5 (đọc lại file từ storage)
+                // 2. Tính hash MD5
                 string hash;
                 using (var md5 = MD5.Create())
                 using (var stream = vm.FileUpload.OpenReadStream())
@@ -169,26 +168,46 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                                      .ToLowerInvariant();
                 }
 
-                // 3. Lấy metadata JSON bằng FFprobe (chỉ cho local files)
+                // 3. Lấy metadata JSON bằng FFprobe cho mọi storage
                 string infoJson = "{}";
-                if (vm.StorageType == StorageTypeEnum.Local)
+                try
                 {
-                    try
+                    string probePath;
+
+                    if (vm.StorageType == StorageTypeEnum.Local)
                     {
-                        var localPath = _storageService.GetFullPath(storagePath, vm.StorageType);
-                        infoJson = await _processor.GetMediaInfoJsonAsync(localPath);
+                        // Sử dụng _env.WebRootPath để có đường dẫn tuyệt đối
+                        probePath = Path.Combine(_env.WebRootPath, storagePath.TrimStart('/').Replace("/", "\\"));
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.LogWarning(ex, $"FFprobe failed for file: {storagePath}");
+                        var tempFolder = Path.Combine(_env.WebRootPath, "temp");
+                        if (!Directory.Exists(tempFolder))
+                        {
+                            Directory.CreateDirectory(tempFolder);
+                        }
+
+                        var tempFile = Path.Combine(tempFolder, Path.GetFileName(vm.FileUpload.FileName));
+                        using (var tempStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
+                        {
+                            await vm.FileUpload.CopyToAsync(tempStream);
+                        }
+
+                        probePath = tempFile;
                     }
+
+                    infoJson = await _processor.GetMediaInfoJsonAsync(probePath);
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"FFprobe failed for file: {vm.FileUpload.FileName}");
+                }
+
 
                 // 4. Parse extension thành FormatEnum
                 var ext = Path.GetExtension(vm.FileUpload.FileName).TrimStart('.').ToLowerInvariant();
                 FormatEnum fmt = ext switch
                 {
-                    // Image formats
                     "jpg" => FormatEnum.Jpg,
                     "jpeg" => FormatEnum.Jpeg,
                     "png" => FormatEnum.Png,
@@ -197,8 +216,6 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     "svg" => FormatEnum.Svg,
                     "webp" => FormatEnum.Webp,
                     "tiff" or "tif" => FormatEnum.Tiff,
-
-                    // Video formats
                     "mp4" => FormatEnum.Mp4,
                     "avi" => FormatEnum.Avi,
                     "mov" => FormatEnum.Mov,
@@ -207,8 +224,6 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     "flv" => FormatEnum.Flv,
                     "webm" => FormatEnum.Webm,
                     "mpeg" or "mpg" => FormatEnum.Mpeg,
-
-                    // Audio formats
                     "mp3" => FormatEnum.Mp3,
                     "wav" => FormatEnum.Wav,
                     "ogg" => FormatEnum.Ogg,
@@ -216,8 +231,6 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     "aac" => FormatEnum.Aac,
                     "m4a" => FormatEnum.M4a,
                     "wma" => FormatEnum.Wma,
-
-                    // Document formats
                     "pdf" => FormatEnum.Pdf,
                     "doc" => FormatEnum.Doc,
                     "docx" => FormatEnum.Docx,
@@ -226,12 +239,10 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                     "ppt" => FormatEnum.Ppt,
                     "pptx" => FormatEnum.Pptx,
                     "txt" => FormatEnum.Txt,
-
-                    // Default
                     _ => FormatEnum.Other
                 };
 
-                // 5. Tạo DTO và lưu vào database
+                // 5. Lưu DTO vào DB
                 var dto = new MediaFileDto
                 {
                     Id = Guid.NewGuid(),
@@ -262,6 +273,7 @@ namespace HD.Station.MediaManagement.Mvc.Controllers
                 return RedirectToAction("Index");
             }
         }
+
 
         // POST: /MediaFiles/Update - Cập nhật file (cho chức năng Edit)
         [HttpPost]

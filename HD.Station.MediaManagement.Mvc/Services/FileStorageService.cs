@@ -117,18 +117,20 @@ namespace HD.Station.MediaManagement.Mvc.Services
             try
             {
                 var safeFileName = GetSafeFileName(fileName);
-                var ftpPath = $"{_ftpServer.TrimEnd('/')}/FTP_Storage/{timestamp}/{safeFileName}";
-                var ftpDirPath = $"{_ftpServer.TrimEnd('/')}/FTP_Storage/{timestamp}/";
+                var ftpDirPath = $"{_ftpServer.TrimEnd('/')}/FTP_Storage/{timestamp}";
+                var ftpPath = $"{ftpDirPath}/{safeFileName}";
 
-                // Tạo thư mục trên FTP server
+                // Tạo thư mục cha (nếu chưa có)
+                await CreateFTPDirectoryAsync($"{_ftpServer.TrimEnd('/')}/FTP_Storage");
                 await CreateFTPDirectoryAsync(ftpDirPath);
 
-                // Upload file
                 var request = (FtpWebRequest)WebRequest.Create(ftpPath);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
                 request.Credentials = new NetworkCredential(_ftpUsername, _ftpPassword);
                 request.UseBinary = true;
-                request.UsePassive = true;
+                request.UsePassive = _config.GetValue<bool>("FileStorageSettings:FTPPassiveMode", true);
+                request.KeepAlive = true; // sửa lại ở đây
+                request.EnableSsl = false;
 
                 using (var requestStream = await request.GetRequestStreamAsync())
                 {
@@ -138,16 +140,16 @@ namespace HD.Station.MediaManagement.Mvc.Services
                 using (var response = (FtpWebResponse)await request.GetResponseAsync())
                 {
                     _logger.LogInformation($"FTP upload completed: {response.StatusDescription}");
+                    return $"FTP_Storage/{timestamp}/{safeFileName}";
                 }
-
-                return $"FTP_Storage/{timestamp}/{safeFileName}";
             }
-            catch (Exception ex)
+            catch (WebException ex) when (ex.Response is FtpWebResponse ftpResponse)
             {
-                _logger.LogError(ex, $"Failed to upload to FTP: {_ftpServer}");
-                throw new InvalidOperationException($"FTP upload failed: {ex.Message}", ex);
+                _logger.LogError($"FTP error: {ftpResponse.StatusCode} - {ftpResponse.StatusDescription}");
+                throw new InvalidOperationException($"FTP upload failed: {ftpResponse.StatusDescription}", ex);
             }
         }
+
 
         private async Task CreateFTPDirectoryAsync(string dirPath)
         {
